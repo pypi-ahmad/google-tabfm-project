@@ -75,8 +75,9 @@ ls pyproject.toml uv.lock app.py
 ```
 
 > [!NOTE]
-> The expected repository URL becomes live after the GitHub repository is created. If you already
-> have the source tree locally, enter that directory and continue at the next section.
+> The workbench is maintained at
+> [pypi-ahmad/google-tabfm-project](https://github.com/pypi-ahmad/google-tabfm-project). If you
+> already have the source tree locally, enter that directory and continue at the next section.
 
 ## 4. Install uv and Python
 

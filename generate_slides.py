@@ -1029,6 +1029,7 @@ def build_cta_slide(
     slide = _new_slide(prs)
     project_url = _project_url(installation)
     docs_url = f"{project_url}#zero-to-master-tutorial"
+    docs_label = docs_url.removeprefix("https://")
     official_url = intro.reference_url("tabfm-repo")
 
     add_badge(slide, "NEXT STEP", 0.62, 0.62, 1.2)
@@ -1069,7 +1070,7 @@ def build_cta_slide(
     add_link_card(
         slide,
         "DOCUMENTATION",
-        "github.com/...#zero-to-master-tutorial",
+        docs_label,
         docs_url,
         9.35,
         3.04,
