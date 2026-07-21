@@ -1,0 +1,16 @@
+[server]
+address = "127.0.0.1"
+maxUploadSize = 500
+fileWatcherType = "poll"
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+base = "dark"
+primaryColor = "#65D1B3"
+textColor = "#F5F7FA"
+
+[theme.sidebar]
+backgroundColor = "#111820"
+textColor = "#F5F7FA"

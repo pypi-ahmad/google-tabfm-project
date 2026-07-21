@@ -1,0 +1,8 @@
+accept = [200, 204, 206, 429]
+exclude = [
+  '^http://127\.0\.0\.1',
+  '^http://localhost',
+]
+max_retries = 3
+timeout = 20
+user_agent = 'Mozilla/5.0 (compatible; TabFM-Workbench-Link-Checker/1.0)'

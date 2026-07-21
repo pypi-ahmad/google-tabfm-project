@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Private security report
+    url: https://github.com/pypi-ahmad/google-tabfm-project/security/advisories/new
+    about: Report vulnerabilities and credential-exposure risks privately.
+  - name: TabFM upstream
+    url: https://github.com/google-research/tabfm/issues
+    about: Report defects reproducible in the official TabFM package without this workbench.

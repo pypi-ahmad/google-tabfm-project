@@ -1,0 +1,62 @@
+name: Feature request
+description: Propose a focused improvement within the research-only project scope.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        The project cannot accept features that imply commercial/production deployment or
+        unsupported task-specific TabFM fine-tuning.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Preflight
+      options:
+        - label: I searched existing issues and documentation.
+          required: true
+        - label: This request preserves local, non-commercial, non-production use.
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: Describe the user need, not only the preferred implementation.
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: State observable acceptance criteria.
+    validations:
+      required: true
+
+  - type: textarea
+    id: approach
+    attributes:
+      label: Proposed approach and tradeoff
+      description: Explain the smallest approach you considered and its maintenance/security cost.
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Data source or parser
+        - Provider integration
+        - Model/context workflow
+        - Prediction or metrics
+        - User interface
+        - Documentation
+        - Developer tooling
+    validations:
+      required: true

@@ -1,0 +1,92 @@
+name: Bug report
+description: Report a reproducible defect in the local research workbench.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Do not include credentials, proprietary data, PII, model checkpoints, or complete datasets.
+        Report security vulnerabilities privately through the Security tab.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Preflight
+      options:
+        - label: I searched existing issues for this problem.
+          required: true
+        - label: This is not a security vulnerability or credential exposure.
+          required: true
+        - label: My use is within TabFM's non-commercial, non-production license scope.
+          required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Problem
+      description: Describe the observed behavior and user impact.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Minimal reproduction
+      description: Provide sanitized steps and a synthetic schema/sample when relevant.
+      placeholder: |
+        1. Start the app with ...
+        2. Load a synthetic CSV containing ...
+        3. Select ...
+        4. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Data loading
+        - Direct URL security
+        - Kaggle integration
+        - Hugging Face integration
+        - MCP discovery
+        - Model and context preparation
+        - Batch prediction
+        - Single test case
+        - Installation or documentation
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: revision
+    attributes:
+      label: Repository revision
+      description: Commit SHA or branch name.
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Python version, CPU/GPU, PyTorch runtime extra, and browser.
+      placeholder: Windows 11, Python 3.12.10, RTX ..., cu130, Chrome ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized error output
+      description: Include the complete traceback/error after removing secrets and private data.
+      render: shell

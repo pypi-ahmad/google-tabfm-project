@@ -1,0 +1,50 @@
+name: Documentation improvement
+description: Report inaccurate, missing, unclear, or broken documentation.
+title: "[Docs]: "
+labels: [documentation]
+body:
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Preflight
+      options:
+        - label: I checked the current README and Zero-to-Master tutorial.
+          required: true
+        - label: I did not include credentials or private dataset content.
+          required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Document location
+      description: File path, heading, or link.
+      placeholder: docs/tutorial/02_installation.md — Configure Kaggle access
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Issue type
+      options:
+        - Incorrect technical claim
+        - Outdated command or API
+        - Missing prerequisite or step
+        - Ambiguous explanation
+        - Broken link or navigation
+        - Typo or formatting
+    validations:
+      required: true
+
+  - type: textarea
+    id: issue
+    attributes:
+      label: What is wrong or missing?
+    validations:
+      required: true
+
+  - type: textarea
+    id: correction
+    attributes:
+      label: Suggested correction and source
+      description: Link official documentation for changing API/model claims when possible.

@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: >-
+  If you use this research workbench, cite this software and cite Google Research TabFM separately.
+title: TabFM Local Research Workbench
+type: software
+authors:
+  - name: pypi-ahmad
+version: 0.1.0
+repository-code: https://github.com/pypi-ahmad/google-tabfm-project
+url: https://github.com/pypi-ahmad/google-tabfm-project
+license: Apache-2.0
+keywords:
+  - tabular-foundation-model
+  - tabfm
+  - streamlit
+  - in-context-learning
+  - classification
+  - regression
+references:
+  - type: software
+    title: "TabFM: Tabular Foundation Models"
+    authors:
+      - name: Google Research
+    repository-code: https://github.com/google-research/tabfm
+    url: https://huggingface.co/google/tabfm-1.0.0-pytorch

@@ -1,0 +1,3938 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A complete interactive guide to Google Research TabFM and the local-first TabFM Workbench.">
+  <meta name="theme-color" content="#f4f7f6" id="theme-color">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23087f78'/%3E%3Cpath d='M6 6h8v8H6zm12 0h8v8h-8zM6 18h8v8H6zm12 0h8v8h-8z' fill='%23fff'/%3E%3C/svg%3E">
+  <title>TabFM Zero to Master — Interactive Tutorial</title>
+  <script>
+    try {
+      var savedTheme = localStorage.getItem("tabfm-tutorial-theme");
+      var initialTheme = savedTheme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.dataset.theme = initialTheme;
+    } catch (_error) {
+      document.documentElement.dataset.theme = "light";
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
+  <style type="text/tailwindcss">
+    @theme {
+      --color-ink: #10181d;
+      --color-porcelain: #f4f7f6;
+      --color-signal: #087f78;
+      --color-amber: #d98a22;
+      --color-slate-line: #cbd7d4;
+    }
+  </style>
+  <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github.min.css">
+  <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css" media="not all">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.18.1/dist/katex.min.css" integrity="sha384-1vdNCNel6Tx/NQa8IR1mGOGKsbGreCkOPfbtPPnUURJ5Tu2PRVfQ/7KLZC+Pi1p1" crossorigin="anonymous">
+  <style>
+    :root {
+      color-scheme: light;
+      --page: #f4f7f6;
+      --surface: #ffffff;
+      --surface-raised: #edf3f1;
+      --text: #10181d;
+      --muted: #52635f;
+      --line: #cbd7d4;
+      --line-strong: #91a8a3;
+      --signal: #087f78;
+      --signal-soft: #d8eeea;
+      --signal-contrast: #ffffff;
+      --amber: #a85d00;
+      --amber-soft: #fff0d2;
+      --danger: #a63d40;
+      --danger-soft: #fae5e5;
+      --code: #f1f5f4;
+      --focus: #0b6f69;
+      --sidebar: 19rem;
+      --header: 4rem;
+      --display: Bahnschrift, "Arial Narrow", "Roboto Condensed", sans-serif;
+      --body: Aptos, "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+      --mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+    }
+
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --page: #0b1216;
+      --surface: #111c21;
+      --surface-raised: #18262b;
+      --text: #e8f1ef;
+      --muted: #9fb3ae;
+      --line: #2b3e43;
+      --line-strong: #587077;
+      --signal: #62d4c8;
+      --signal-soft: #153c39;
+      --signal-contrast: #071311;
+      --amber: #ffc064;
+      --amber-soft: #432e12;
+      --danger: #ff9b9e;
+      --danger-soft: #422326;
+      --code: #0d171b;
+      --focus: #7ee4da;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 5rem; }
+    body {
+      margin: 0;
+      overflow-x: hidden;
+      background: var(--page);
+      color: var(--text);
+      font-family: var(--body);
+      font-size: 1rem;
+      line-height: 1.72;
+      text-rendering: optimizeLegibility;
+    }
+    button, input { font: inherit; }
+    a { color: var(--signal); text-underline-offset: .2em; }
+    a:hover { text-decoration-thickness: .13em; }
+    :focus-visible { outline: .18rem solid var(--focus); outline-offset: .2rem; }
+    ::selection { background: var(--signal-soft); color: var(--text); }
+
+    .skip-link {
+      position: fixed;
+      z-index: 100;
+      top: .75rem;
+      left: .75rem;
+      padding: .55rem .85rem;
+      background: var(--text);
+      color: var(--page);
+      transform: translateY(-180%);
+    }
+    .skip-link:focus { transform: translateY(0); }
+    .reading-progress {
+      position: fixed;
+      z-index: 80;
+      inset: 0 auto auto 0;
+      width: 0;
+      height: .2rem;
+      background: var(--signal);
+      transition: width .1s linear;
+    }
+
+    .mobile-bar {
+      display: none;
+      position: sticky;
+      z-index: 50;
+      top: 0;
+      min-height: var(--header);
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: .75rem 1rem;
+      border-bottom: 1px solid var(--line);
+      background: color-mix(in srgb, var(--page) 92%, transparent);
+      backdrop-filter: blur(1rem);
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: .7rem;
+      color: var(--text);
+      font-family: var(--display);
+      font-weight: 700;
+      letter-spacing: .02em;
+      text-decoration: none;
+    }
+    .brand-mark {
+      display: grid;
+      width: 1.75rem;
+      aspect-ratio: 1;
+      grid-template-columns: repeat(3, 1fr);
+      gap: .15rem;
+    }
+    .brand-mark span { background: var(--line-strong); }
+    .brand-mark span:nth-child(3), .brand-mark span:nth-child(5), .brand-mark span:nth-child(7) { background: var(--signal); }
+
+    .icon-button, .copy-button, .tab-button, .search-result {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+    }
+    .icon-button {
+      display: inline-grid;
+      width: 2.6rem;
+      height: 2.6rem;
+      place-items: center;
+      border-radius: .35rem;
+    }
+    .icon-button:hover, .copy-button:hover, .tab-button:hover, .search-result:hover { border-color: var(--signal); }
+
+    .page-grid {
+      display: grid;
+      grid-template-columns: var(--sidebar) minmax(0, 1fr);
+      min-height: 100vh;
+    }
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 1.5rem;
+      border-right: 1px solid var(--line);
+      background:
+        linear-gradient(var(--line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line) 1px, transparent 1px),
+        var(--surface);
+      background-size: 2rem 2rem;
+    }
+    .sidebar-inner {
+      display: flex;
+      min-height: 100%;
+      flex-direction: column;
+      padding: 1rem;
+      background: color-mix(in srgb, var(--surface) 94%, transparent);
+    }
+    .sidebar .brand { margin-bottom: 2.25rem; }
+    .eyebrow {
+      margin: 0 0 .55rem;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: .72rem;
+      font-weight: 650;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .chapter-nav { margin: 1.5rem 0; }
+    .chapter-nav ol { display: grid; gap: .35rem; margin: 0; padding: 0; list-style: none; }
+    .chapter-nav a {
+      display: grid;
+      grid-template-columns: 2rem 1fr;
+      gap: .65rem;
+      padding: .7rem .6rem;
+      border-left: .18rem solid transparent;
+      color: var(--muted);
+      font-size: .9rem;
+      line-height: 1.35;
+      text-decoration: none;
+    }
+    .chapter-nav a span:first-child { font-family: var(--mono); font-size: .75rem; }
+    .chapter-nav a:hover, .chapter-nav a[aria-current="location"] {
+      border-left-color: var(--signal);
+      background: var(--signal-soft);
+      color: var(--text);
+    }
+    .sidebar-note {
+      margin-top: auto;
+      padding-top: 1rem;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: .78rem;
+      line-height: 1.5;
+    }
+
+    .search-box { position: relative; }
+    .search-box input {
+      width: 100%;
+      min-height: 2.7rem;
+      padding: .65rem 3.25rem .65rem .8rem;
+      border: 1px solid var(--line);
+      border-radius: .35rem;
+      background: var(--page);
+      color: var(--text);
+    }
+    .shortcut {
+      position: absolute;
+      top: 50%;
+      right: .55rem;
+      padding: .1rem .35rem;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: .68rem;
+      transform: translateY(-50%);
+    }
+    .search-results {
+      display: none;
+      max-height: 19rem;
+      margin: .4rem 0 0;
+      padding: .3rem;
+      overflow-y: auto;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      list-style: none;
+    }
+    .search-results[data-open="true"] { display: grid; gap: .2rem; }
+    .search-result {
+      width: 100%;
+      padding: .55rem .65rem;
+      border-color: transparent;
+      text-align: left;
+      line-height: 1.35;
+    }
+    .search-result[aria-selected="true"] { border-color: var(--signal); background: var(--signal-soft); }
+    .search-result small { display: block; color: var(--muted); }
+
+    .main { min-width: 0; }
+    .hero {
+      position: relative;
+      display: grid;
+      min-height: 42rem;
+      grid-template-columns: minmax(0, 1.05fr) minmax(20rem, .95fr);
+      align-items: center;
+      gap: clamp(2rem, 6vw, 6rem);
+      padding: clamp(3rem, 8vw, 7rem) clamp(1.25rem, 6vw, 6rem);
+      overflow: hidden;
+      border-bottom: 1px solid var(--line);
+    }
+    .hero::before {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, transparent 0 49.8%, var(--line) 50%, transparent 50.2%),
+        linear-gradient(transparent 0 49.8%, var(--line) 50%, transparent 50.2%);
+      background-size: 4rem 4rem;
+      content: "";
+      opacity: .38;
+      pointer-events: none;
+    }
+    .hero-copy, .matrix-demo { position: relative; z-index: 1; }
+    .hero h1 {
+      max-width: 12ch;
+      margin: 0;
+      font-family: var(--display);
+      font-size: clamp(3rem, 7vw, 6.6rem);
+      font-stretch: condensed;
+      font-weight: 680;
+      letter-spacing: -.055em;
+      line-height: .94;
+    }
+    .hero h1 em { color: var(--signal); font-style: normal; }
+    .lede { max-width: 42rem; margin: 1.5rem 0 0; color: var(--muted); font-size: clamp(1.05rem, 1.4vw, 1.25rem); }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: .7rem; margin-top: 1.8rem; }
+    .primary-link, .secondary-link {
+      display: inline-flex;
+      min-height: 2.8rem;
+      align-items: center;
+      justify-content: center;
+      padding: .65rem 1rem;
+      border: 1px solid var(--signal);
+      border-radius: .25rem;
+      font-weight: 650;
+      text-decoration: none;
+    }
+    .primary-link { background: var(--signal); color: var(--signal-contrast); }
+    .secondary-link { background: var(--surface); color: var(--signal); }
+    .license-flag {
+      display: flex;
+      max-width: 42rem;
+      gap: .65rem;
+      margin-top: 1.5rem;
+      padding: .75rem 0;
+      border-block: 1px solid var(--line);
+      color: var(--muted);
+      font-size: .85rem;
+    }
+    .license-flag strong { color: var(--amber); }
+
+    .matrix-demo {
+      padding: 1rem;
+      border: 1px solid var(--line-strong);
+      background: var(--surface);
+      box-shadow: .85rem .85rem 0 var(--signal-soft);
+    }
+    .matrix-demo header { display: flex; align-items: center; justify-content: space-between; padding: .2rem .25rem .8rem; }
+    .matrix-demo header span:last-child { color: var(--muted); font-family: var(--mono); font-size: .72rem; }
+    .matrix-demo table { width: 100%; margin: 0; border-collapse: collapse; font-family: var(--mono); font-size: .78rem; }
+    .matrix-demo th, .matrix-demo td { padding: .65rem .5rem; border: 1px solid var(--line); text-align: left; }
+    .matrix-demo th { background: var(--surface-raised); color: var(--muted); }
+    .matrix-demo tr:last-child td { background: var(--amber-soft); }
+    .matrix-flow { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: .75rem; margin-top: 1rem; }
+    .matrix-node { padding: .75rem; border: 1px solid var(--line); background: var(--surface-raised); font-family: var(--mono); font-size: .72rem; }
+    .matrix-node.output { border-color: var(--signal); background: var(--signal-soft); }
+    .matrix-arrow { color: var(--signal); font-size: 1.4rem; }
+
+    .tutorial {
+      width: min(100%, 76rem);
+      margin-inline: auto;
+      padding: clamp(3rem, 8vw, 7rem) clamp(1.25rem, 7vw, 7rem);
+    }
+    .tutorial > section.level2 { margin-bottom: 8rem; }
+    .tutorial h2, .tutorial h3, .tutorial h4, .tutorial h5, .tutorial h6 {
+      color: var(--text);
+      font-family: var(--display);
+      letter-spacing: -.025em;
+      line-height: 1.14;
+      scroll-margin-top: 5rem;
+    }
+    .tutorial h2 {
+      margin: 0 0 2.5rem;
+      padding-top: 1rem;
+      border-top: .35rem solid var(--signal);
+      font-size: clamp(2.25rem, 5vw, 4.4rem);
+    }
+    .tutorial h3 { margin: 4rem 0 1.2rem; font-size: clamp(1.75rem, 3vw, 2.55rem); }
+    .tutorial h4 { margin: 2.7rem 0 1rem; font-size: 1.45rem; }
+    .tutorial h5 { margin: 2rem 0 .8rem; font-size: 1.18rem; }
+    .tutorial p, .tutorial ul, .tutorial ol { max-width: 74ch; }
+    .tutorial li + li { margin-top: .35rem; }
+    .tutorial strong { color: color-mix(in srgb, var(--text) 90%, var(--signal)); }
+    .tutorial code:not(pre code) {
+      padding: .12em .35em;
+      border: 1px solid var(--line);
+      background: var(--code);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: .88em;
+    }
+    .tutorial hr { margin: 4rem 0; border: 0; border-top: 1px solid var(--line); }
+
+    .admonition {
+      position: relative;
+      max-width: 74ch;
+      margin: 1.75rem 0;
+      padding: 1rem 1.1rem 1rem 3.8rem;
+      border: 1px solid var(--line);
+      border-left: .3rem solid var(--signal);
+      background: var(--signal-soft);
+    }
+    .admonition::before {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      font-family: var(--mono);
+      font-size: .72rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      content: attr(data-kind);
+      writing-mode: vertical-rl;
+    }
+    .admonition[data-kind="WARNING"], .admonition[data-kind="CAUTION"] { border-left-color: var(--amber); background: var(--amber-soft); }
+    .admonition p:first-child { margin-top: 0; }
+    .admonition p:last-child { margin-bottom: 0; }
+
+    .table-shell { width: 100%; margin: 1.5rem 0 2rem; overflow-x: auto; border: 1px solid var(--line); }
+    .tutorial table { width: 100%; min-width: 36rem; margin: 0; border-collapse: collapse; font-size: .9rem; line-height: 1.5; }
+    .tutorial th, .tutorial td { padding: .75rem .85rem; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .tutorial th { background: var(--surface-raised); color: var(--text); font-family: var(--display); }
+    .tutorial tr:last-child td { border-bottom: 0; }
+    .tutorial th:last-child, .tutorial td:last-child { border-right: 0; }
+    .tutorial tbody tr:nth-child(even) { background: color-mix(in srgb, var(--surface-raised) 42%, transparent); }
+
+    .code-frame { position: relative; max-width: 100%; margin: 1.5rem 0 2rem; border: 1px solid var(--line); background: var(--code); }
+    .code-toolbar { display: flex; min-height: 2.5rem; align-items: center; justify-content: space-between; padding: .35rem .45rem .35rem .8rem; border-bottom: 1px solid var(--line); color: var(--muted); font-family: var(--mono); font-size: .72rem; }
+    .copy-button { padding: .3rem .55rem; border-radius: .2rem; font-family: var(--body); font-size: .75rem; }
+    .code-frame pre { max-width: 100%; margin: 0; padding: 1rem; overflow: auto; background: transparent !important; line-height: 1.58; }
+    .code-frame code { font-family: var(--mono); font-size: .84rem; }
+    .code-frame .hljs { background: transparent !important; }
+
+    pre.mermaid {
+      display: grid;
+      min-height: 10rem;
+      place-items: center;
+      margin: 1.75rem 0 2rem;
+      padding: 1rem;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--muted);
+      font-family: var(--mono);
+      white-space: pre;
+    }
+    pre.mermaid svg { max-width: 100%; height: auto; }
+    .katex-display { max-width: 100%; margin: 1.5rem 0; overflow-x: auto; overflow-y: hidden; padding: .75rem 0; }
+
+    .install-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .45rem;
+      margin: 0 0 2rem;
+      padding: .45rem;
+      border: 1px solid var(--line);
+      background: var(--surface-raised);
+    }
+    .tab-button { padding: .55rem .8rem; border-radius: .2rem; }
+    .tab-button[aria-selected="true"] { border-color: var(--signal); background: var(--signal); color: var(--signal-contrast); }
+    [data-install-hidden="true"] { display: none !important; }
+
+    .site-footer {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1rem;
+      padding: 2rem clamp(1.25rem, 6vw, 6rem);
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: .82rem;
+    }
+    .site-footer p { margin: 0; }
+
+    dialog {
+      width: min(92vw, 28rem);
+      max-height: 90vh;
+      margin: 0 0 0 auto;
+      padding: 0;
+      border: 0;
+      background: var(--surface);
+      color: var(--text);
+    }
+    dialog::backdrop { background: rgb(5 12 15 / .68); backdrop-filter: blur(.2rem); }
+    .dialog-inner { display: flex; min-height: 100vh; flex-direction: column; padding: 1rem; }
+    .dialog-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+
+    @media (max-width: 900px) {
+      .mobile-bar { display: flex; }
+      .page-grid { display: block; }
+      .sidebar { display: none; }
+      .hero { min-height: auto; grid-template-columns: 1fr; padding-top: 4rem; }
+      .matrix-demo { max-width: 40rem; }
+      .hero h1 { max-width: 10ch; }
+      .site-footer { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 540px) {
+      .hero { padding-inline: 1rem; }
+      .matrix-flow { grid-template-columns: 1fr; }
+      .matrix-arrow { transform: rotate(90deg); justify-self: center; }
+      .tutorial { padding-inline: 1rem; }
+      .tutorial > section.level2 { margin-bottom: 5rem; }
+      .tutorial h2 { font-size: 2.35rem; }
+      .table-shell { width: calc(100vw - 2rem); }
+    }
+    @media print {
+      .sidebar, .mobile-bar, .reading-progress, .copy-button, .install-tabs, .hero-actions { display: none !important; }
+      .page-grid { display: block; }
+      .hero { min-height: auto; grid-template-columns: 1fr; }
+      .tutorial { width: 100%; padding: 2rem 0; }
+      .tutorial > section.level2 { break-before: page; }
+      .code-frame, .table-shell, pre.mermaid { break-inside: avoid; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+    }
+  </style>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.18.1/dist/katex.min.js" integrity="sha384-ycJ6GAwiS15LoUPipwJOrWTvkUHl/YqELValBwI5I4awP1EeEQJYarj+w85ntcz7" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.18.1/dist/contrib/auto-render.min.js" integrity="sha384-bjyGPfbij8/NDKJhSGZNP/khQVgtHUE5exjm4Ydllo42FwIgYsdLO2lXGmRBf5Mz" crossorigin="anonymous"></script>
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.16.0/dist/mermaid.esm.min.mjs";
+    window.tabfmMermaid = mermaid;
+    window.dispatchEvent(new Event("tabfm-mermaid-ready"));
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to tutorial</a>
+  <div class="reading-progress" id="reading-progress" aria-hidden="true"></div>
+
+  <header class="mobile-bar">
+    <a class="brand" href="#top" aria-label="TabFM Zero to Master home">
+      <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span>
+      <span>TabFM / Z2M</span>
+    </a>
+    <button class="icon-button" id="mobile-menu-button" type="button" aria-label="Open tutorial navigation" aria-controls="mobile-nav" aria-expanded="false">☰</button>
+  </header>
+
+  <div class="page-grid" id="top">
+    <aside class="sidebar" aria-label="Tutorial navigation">
+      <div class="sidebar-inner">
+        <a class="brand" href="#top" aria-label="TabFM Zero to Master home">
+          <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span>
+          <span>TabFM / Z2M</span>
+        </a>
+        <p class="eyebrow">Search the field guide</p>
+        <div class="search-box">
+          <label class="sr-only" for="heading-search">Search tutorial headings</label>
+          <input id="heading-search" type="search" placeholder="Fourier features…" autocomplete="off" aria-controls="search-results" aria-expanded="false">
+          <span class="shortcut" aria-hidden="true">/</span>
+        </div>
+        <ul class="search-results" id="search-results" role="listbox" aria-label="Matching tutorial headings"></ul>
+        <nav class="chapter-nav" aria-label="Chapters">
+          <ol>
+            <li><a href="#introduction"><span>01</span><span>Foundations</span></a></li>
+            <li><a href="#installation"><span>02</span><span>Installation</span></a></li>
+            <li><a href="#data-handling"><span>03</span><span>Data handling</span></a></li>
+            <li><a href="#tabfm-mastery"><span>04</span><span>TabFM mastery</span></a></li>
+          </ol>
+        </nav>
+        <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch to dark theme" aria-pressed="false">◐</button>
+        <p class="sidebar-note"><strong>Research use only.</strong><br>TabFM pretrained weights carry separate non-commercial terms.</p>
+      </div>
+    </aside>
+
+    <main class="main" id="main-content">
+      <section class="hero" aria-labelledby="page-title">
+        <div class="hero-copy">
+          <p class="eyebrow">Google Research TabFM · Zero to Master</p>
+          <h1 id="page-title">Learn the table. <em>Predict the row.</em></h1>
+          <p class="lede">A practical field guide to tabular foundation models—from architecture and installation to safe data ingestion, in-context prediction, and credible evaluation.</p>
+          <div class="hero-actions">
+            <a class="primary-link" href="#introduction">Start with foundations →</a>
+            <a class="secondary-link" href="https://github.com/google-research/tabfm">Official TabFM repository</a>
+          </div>
+          <p class="license-flag"><span aria-hidden="true">⚠</span><span><strong>Non-commercial model weights.</strong> This workbench is for local research and evaluation, not production deployment.</span></p>
+        </div>
+        <figure class="matrix-demo">
+          <header><strong>In-context table</strong><span>target: churn</span></header>
+          <table aria-label="Illustrative TabFM context and test rows">
+            <thead><tr><th scope="col">age</th><th scope="col">plan</th><th scope="col">churn</th></tr></thead>
+            <tbody><tr><td>31</td><td>basic</td><td>no</td></tr><tr><td>47</td><td>pro</td><td>yes</td></tr><tr><td>29</td><td>pro</td><td>?</td></tr></tbody>
+          </table>
+          <div class="matrix-flow" aria-label="Illustrative context to prediction flow">
+            <div class="matrix-node">2 labeled rows<br>+ 1 test row</div><span class="matrix-arrow" aria-hidden="true">→</span><div class="matrix-node output">P(churn = yes)<br><strong>0.72</strong> · illustrative</div>
+          </div>
+        </figure>
+      </section>
+
+      <div id="install-tabs" class="install-tabs" role="tablist" aria-label="Installation track" hidden>
+        <button class="tab-button" id="install-tab-powershell" type="button" role="tab" aria-selected="true" aria-controls="installation-track-content" tabindex="0" data-track="powershell">PowerShell + uv</button>
+        <button class="tab-button" id="install-tab-bash" type="button" role="tab" aria-selected="false" aria-controls="installation-track-content" tabindex="-1" data-track="bash">Bash + uv</button>
+        <button class="tab-button" id="install-tab-conda" type="button" role="tab" aria-selected="false" aria-controls="installation-track-content" tabindex="-1" data-track="conda">Conda + uv</button>
+      </div>
+
+      <article class="tutorial" id="tutorial-content">
+<section id="introduction" class="level2">
+<h2>01 — TabFM Foundations: From Gradient-Boosted Trees to In-Context
+Learning</h2>
+<div class="warning">
+<div class="title">
+<p>Warning</p>
+</div>
+<p>TabFM's source code is Apache-2.0 licensed, but its pretrained
+weights use the <strong>TabFM Non-Commercial License v1.0</strong>. The
+weights may be used only for testing, evaluation, or research that is
+not tied to commercial gain or production use. Read the <a
+href="https://huggingface.co/google/tabfm-1.0.0-pytorch/blob/main/LICENSE">official
+weight license</a> before downloading them.</p>
+</div>
+<p><a href="../../README.md#zero-to-master-tutorial">← Tutorial
+index</a> · <a href="02_installation.md">Next: Installation →</a></p>
+<section id="what-you-will-learn" class="level3">
+<h3>What you will learn</h3>
+<p>By the end of this chapter, you will be able to:</p>
+<ol type="1">
+<li>distinguish a <strong>tabular foundation model</strong> from a
+task-specific supervised model;</li>
+<li>explain why TabFM's <code>fit()</code> call is not fine-tuning;</li>
+<li>trace a table through Fourier features, column attention, row
+compression, and the in-context-learning transformer;</li>
+<li>compare TabFM with XGBoost and LightGBM without treating either
+family as universally superior;</li>
+<li>estimate whether your dataset and hardware fit this workbench's
+operating envelope.</li>
+</ol>
+</section>
+<section id="1-tabular-learning-in-one-picture" class="level3">
+<h3>1. Tabular learning in one picture</h3>
+<p>Tabular prediction maps a row of heterogeneous features to either a
+discrete class or a continuous value. A table can contain numerical,
+categorical, Boolean, and datetime columns; unlike text, its row and
+column order usually carries no semantic meaning.</p>
+<pre class="mermaid"><code>flowchart LR
+    T[Table] --&gt; X[Feature matrix X]
+    T --&gt; Y[Target y]
+    X --&gt; C{Task}
+    C --&gt;|Classification| PC[Class label and probabilities]
+    C --&gt;|Regression| PR[Continuous prediction]</code></pre>
+<p>Let a labeled context dataset be</p>
+<p><span class="math display">\[
+\mathcal{D}_{c}=\{(\mathbf{x}_i,y_i)\}_{i=1}^{n}
+\]</span></p>
+<p>and let <span class="math inline">\(\mathbf{x}_*\)</span> be an
+unseen row. Both a GBDT and TabFM estimate a conditional outcome, but
+they obtain task knowledge differently:</p>
+<p><span class="math display">\[
+\underbrace{p(y_*\mid\mathbf{x}_*;\hat{\theta}_{\mathcal{D}_c})}_{\text{task-specific
+training}}
+\qquad\text{versus}\qquad
+\underbrace{p_{\theta}(y_*\mid\mathbf{x}_*,\mathcal{D}_c)}_{\text{frozen
+model + context}}.
+\]</span></p>
+<p>In the left expression, training changes parameters <span
+class="math inline">\(\hat{\theta}\)</span> for this dataset. In the
+right expression, TabFM keeps pretrained parameters <span
+class="math inline">\(\theta\)</span> frozen and supplies labeled rows
+as part of the inference context. Google describes this as
+<strong>zero-shot in-context learning (ICL)</strong>: the context
+defines the new prediction problem without updating model weights (<a
+href="https://research.google/blog/introducing-tabfm-a-zero-shot-foundation-model-for-tabular-data/">Google
+Research overview</a>, <a
+href="https://github.com/google-research/tabfm/tree/cb6ba46b7ebc9a6581a81827e14e9c246202afb9">official
+repository</a>).</p>
+</section>
+<section id="2-what-is-a-tabular-foundation-model" class="level3">
+<h3>2. What is a tabular foundation model?</h3>
+<p>A <strong>foundation model</strong> is pretrained across a broad task
+distribution so that one fixed model can adapt to new tasks. For TabFM,
+each task is itself a table. Pretraining uses hundreds of millions of
+synthetic datasets generated from <strong>structural causal models
+(SCMs)</strong>, rather than one fixed business dataset. At inference
+time, a new table acts like a prompt: labeled rows demonstrate the
+relationship, and unlabeled rows ask the model to complete it (<a
+href="https://huggingface.co/google/tabfm-1.0.0-pytorch">official model
+card</a>).</p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Task-specific GBDT</th>
+<th>TabFM v1.0.0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Adaptation mechanism</td>
+<td>Optimize new trees and leaf values</td>
+<td>Condition frozen weights on labeled rows</td>
+</tr>
+<tr>
+<td>Per-dataset weight updates</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Hyperparameter search</td>
+<td>Often valuable</td>
+<td>Not required for basic inference</td>
+</tr>
+<tr>
+<td>Feature engineering</td>
+<td>Often useful and domain-specific</td>
+<td>Built-in mixed-type preprocessing and learned interactions</td>
+</tr>
+<tr>
+<td>Output</td>
+<td>Class/score or continuous value</td>
+<td>Class probabilities/labels or continuous value</td>
+</tr>
+<tr>
+<td>Strength</td>
+<td>Efficient, mature, explainable tooling</td>
+<td>Immediate zero-shot baseline with little task-specific work</td>
+</tr>
+<tr>
+<td>Main cost</td>
+<td>Training/tuning lifecycle</td>
+<td>Large checkpoint and context-dependent inference memory</td>
+</tr>
+<tr>
+<td>Hard task limits here</td>
+<td>Model-dependent</td>
+<td>At most 10 classes; workbench caps 500 features</td>
+</tr>
+</tbody>
+</table>
+<div class="important">
+<div class="title">
+<p>Important</p>
+</div>
+<p><strong>Zero-shot</strong> does not mean “without examples.” TabFM
+receives labeled examples as context. It means it does not train new
+model parameters or run task-specific hyperparameter optimization.</p>
+</div>
+</section>
+<section id="3-traditional-gbdts-what-tabfm-changes" class="level3">
+<h3>3. Traditional GBDTs: what TabFM changes</h3>
+<p>Gradient-boosted decision trees build an additive function one tree
+at a time:</p>
+<p><span class="math display">\[
+F_M(\mathbf{x}) = F_0(\mathbf{x}) + \eta\sum_{m=1}^{M} f_m(\mathbf{x}),
+\]</span></p>
+<p>where <span class="math inline">\(f_m\)</span> is tree <span
+class="math inline">\(m\)</span> and <span
+class="math inline">\(\eta\)</span> is the learning rate. At step <span
+class="math inline">\(m\)</span>, boosting chooses a tree that reduces a
+task-specific regularized objective. A simplified XGBoost objective
+is</p>
+<p><span class="math display">\[
+\mathcal{L}^{(m)}=
+\sum_i \ell\!\left(y_i,F_{m-1}(\mathbf{x}_i)+f_m(\mathbf{x}_i)\right)
++\Omega(f_m).
+\]</span></p>
+<p>This is powerful precisely because it fits the current dataset. It
+also creates a lifecycle: split data, choose loss and search space,
+train candidates, cross-validate, calibrate, serialize, and monitor the
+selected artifact. XGBoost introduced a regularized and
+systems-efficient form of gradient boosting (<a
+href="https://arxiv.org/abs/1603.02754">Chen and Guestrin, 2016</a>);
+LightGBM added histogram-based learning and gradient-based one-side
+sampling for efficient large-scale training (<a
+href="https://proceedings.neurips.cc/paper/2017/hash/6449f44a102fde848669bdd9eb6b76fa-Abstract.html">Ke
+et al., 2017</a>).</p>
+<p>TabFM moves adaptation from optimization into the forward pass:</p>
+<pre class="mermaid"><code>flowchart TB
+    subgraph GBDT[Traditional GBDT]
+        G1[Labeled table] --&gt; G2[Feature and hyperparameter choices]
+        G2 --&gt; G3[Optimize task-specific trees]
+        G3 --&gt; G4[Persist fitted model]
+        G4 --&gt; G5[Predict new rows]
+    end
+
+    subgraph TFM[TabFM]
+        T1[Labeled context rows] --&gt; T3[Frozen pretrained model]
+        T2[Test rows] --&gt; T3
+        T3 --&gt; T4[Single inference workflow]
+        T4 --&gt; T5[Predictions]
+    end</code></pre>
+<p>This is a tradeoff, not a declaration that trees are obsolete. GBDTs
+remain attractive when you need compact artifacts, fast CPU inference,
+established explainability, or task-specific tuning. TabFM is attractive
+when fast adaptation and a strong no-tuning baseline matter.</p>
+</section>
+<section id="4-tabfm-architecture-layer-by-layer" class="level3">
+<h3>4. TabFM architecture, layer by layer</h3>
+<p>TabFM treats the table as a two-dimensional object before compressing
+rows into a causal ICL sequence. The official PyTorch model card
+describes three stages: <strong>column attention</strong>, <strong>row
+compression</strong>, and a <strong>24-block causal ICL
+transformer</strong> (<a
+href="https://huggingface.co/google/tabfm-1.0.0-pytorch">model
+architecture</a>, <a
+href="https://huggingface.co/google/tabfm-1.0.0-pytorch/blob/main/classification/config.json">classification
+config</a>).</p>
+<pre class="mermaid"><code>flowchart LR
+    A[Mixed-type cells] --&gt; B[Numeric encoding and Fourier features]
+    B --&gt; C[3 column-attention blocks]
+    C --&gt; D[3 row-attention blocks with 8 CLS tokens]
+    D --&gt; E[One dense representation per row]
+    E --&gt; F[24-block causal ICL transformer]
+    F --&gt; G{Task head}
+    G --&gt; H[Up to 10 class logits]
+    G --&gt; I[Regression value]</code></pre>
+<section id="41-cell-values-and-fourier-features" class="level4">
+<h4>4.1 Cell values and Fourier features</h4>
+<p>After the scikit-learn-compatible wrapper converts mixed columns into
+numerical form, TabFM maps scalar values into a richer periodic basis. A
+generic Fourier feature map is</p>
+<p><span class="math display">\[
+\gamma(x)=
+\left[
+\sin(2\pi b_1x),\cos(2\pi b_1x),\ldots,
+\sin(2\pi b_Kx),\cos(2\pi b_Kx)
+\right].
+\]</span></p>
+<p>TabFM v1.0.0 configures <strong>32 frequencies</strong>, groups
+features in threes, and projects them into a <strong>256-dimensional
+embedding</strong>. Fourier features make multiple value scales and
+nonlinear relationships accessible to subsequent linear projections and
+attention. The tutorial uses the equation to explain the representation;
+exact frequencies are learned/configured implementation details, not
+user-supplied preprocessing.</p>
+</section>
+<section id="42-column-attention-with-induced-points" class="level4">
+<h4>4.2 Column attention with induced points</h4>
+<p>For embedded cells <span class="math inline">\(Q\)</span>, <span
+class="math inline">\(K\)</span>, and <span
+class="math inline">\(V\)</span>, scaled dot-product attention is</p>
+<p><span class="math display">\[
+\operatorname{Attention}(Q,K,V)
+=\operatorname{softmax}\!\left(\frac{QK^\top}{\sqrt{d_k}}\right)V.
+\]</span></p>
+<p>Direct self-attention over a large set is quadratic in set size.
+TabFM's column module follows a <strong>Set Transformer</strong> pattern
+with 256 induced points. In an induced set-attention block, learned
+inducing vectors <span class="math inline">\(I\)</span> first summarize
+the input set and then communicate the summary back:</p>
+<p><span class="math display">\[
+H=\operatorname{MAB}(I,X),
+\qquad
+Y=\operatorname{MAB}(X,H).
+\]</span></p>
+<p>This allows information to move across examples for each feature
+while respecting the set-like nature of rows. The original Set
+Transformer paper introduces this induced-attention construction (<a
+href="https://proceedings.mlr.press/v97/lee19d.html">Lee et al.,
+2019</a>). TabFM uses three column-attention blocks, four heads, and 256
+induced points.</p>
+</section>
+<section id="43-row-attention-and-compression" class="level4">
+<h4>4.3 Row attention and compression</h4>
+<p>Column-aware cell embeddings are then processed across features.
+TabFM uses three row-attention blocks, eight heads, and eight learned
+<strong>CLS tokens</strong>. The CLS representations collect information
+from a variable-width row and are reduced to a dense row representation.
+Compression matters: the expensive ICL transformer processes row vectors
+instead of every raw cell.</p>
+</section>
+<section id="44-rotary-position-embeddings" class="level4">
+<h4>4.4 Rotary position embeddings</h4>
+<p>The row-attention stage uses <strong>rotary position embedding
+(RoPE)</strong>. RoPE rotates pairs of embedding coordinates as a
+function of position:</p>
+<p><span class="math display">\[
+\operatorname{RoPE}(\mathbf{x},m)=R_{\Theta,m}\mathbf{x},
+\]</span></p>
+<p>so an attention dot product depends on relative displacement:</p>
+<p><span class="math display">\[
+(R_{\Theta,m}\mathbf{q})^\top(R_{\Theta,n}\mathbf{k})
+=\mathbf{q}^\top R_{\Theta,n-m}\mathbf{k}.
+\]</span></p>
+<p>The construction and relative-position property come from RoFormer
+(<a href="https://arxiv.org/abs/2104.09864">Su et al., 2021</a>). Within
+TabFM, position is a computational mechanism; the model also uses
+permutations/ensembles to reduce sensitivity to arbitrary table
+ordering.</p>
+</section>
+<section id="45-causal-icl-masking" class="level4">
+<h4>4.5 Causal ICL masking</h4>
+<p>After compression, context and test row representations form a
+sequence. The ICL transformer must allow a test prediction to read the
+labeled context without leaking unknown test labels. A causal mask
+changes attention logits to</p>
+<p><span class="math display">\[
+A_{ij}=
+\begin{cases}
+\frac{\mathbf{q}_i^\top\mathbf{k}_j}{\sqrt{d_k}}, &amp; j\le i,\\
+-\infty, &amp; j&gt;i.
+\end{cases}
+\]</span></p>
+<p>Applying softmax makes masked positions contribute zero. TabFM uses
+24 ICL blocks, eight heads, SwiGLU feed-forward layers, and a
+feed-forward expansion factor of four. The result is a prediction
+conditioned on prior context representations rather than an updated
+parameter set.</p>
+</section>
+<section id="46-ensemble-aggregation" class="level4">
+<h4>4.6 Ensemble aggregation</h4>
+<p>The workbench constructs eight deterministic ensemble views. Views
+can vary normalization, feature order, class-label shifts, and
+row/feature subsampling. If classifier member <span
+class="math inline">\(m\)</span> produces probabilities <span
+class="math inline">\(\mathbf{p}^{(m)}\)</span>, a basic equal-weight
+ensemble is</p>
+<p><span class="math display">\[
+\bar{\mathbf{p}}=\frac{1}{M}\sum_{m=1}^{M}\mathbf{p}^{(m)}.
+\]</span></p>
+<p>Regression members are aggregated analogously. The upstream project
+also describes a larger TabFM-Ensemble preset with engineered crosses,
+SVD features, non-negative least-squares blending, and classification
+calibration; this repository intentionally uses a smaller eight-member
+setup for local hardware (<a
+href="https://research.google/blog/introducing-tabfm-a-zero-shot-foundation-model-for-tabular-data/">Google
+Research benchmark discussion</a>).</p>
+</section>
+</section>
+<section id="5-classification-and-regression" class="level3">
+<h3>5. Classification and regression</h3>
+<p>The same backbone has separate pretrained task checkpoints.</p>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Classification</th>
+<th>Regression</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Target</td>
+<td>Discrete labels</td>
+<td>Continuous numeric values</td>
+</tr>
+<tr>
+<td>Checkpoint subfolder</td>
+<td><code>classification/</code></td>
+<td><code>regression/</code></td>
+</tr>
+<tr>
+<td>Model load argument</td>
+<td><code>model_type="classification"</code></td>
+<td><code>model_type="regression"</code></td>
+</tr>
+<tr>
+<td>Main API</td>
+<td><code>predict()</code>, <code>predict_proba()</code></td>
+<td><code>predict()</code></td>
+</tr>
+<tr>
+<td>Workbench metrics</td>
+<td>Accuracy, log loss</td>
+<td>MAE, RMSE, R²</td>
+</tr>
+<tr>
+<td>Hard constraint</td>
+<td>2–10 classes</td>
+<td>Target must be numeric</td>
+</tr>
+</tbody>
+</table>
+<p>TabFM's official model card lists classification with at most ten
+classes as a hard architectural limit and identifies task-specific
+fine-tuning as an unsupported use (<a
+href="https://huggingface.co/google/tabfm-1.0.0-pytorch">intended use
+and limitations</a>).</p>
+</section>
+<section id="6-preprocessing-before-the-neural-model" class="level3">
+<h3>6. Preprocessing before the neural model</h3>
+<p>The wrapper accepts pandas DataFrames or NumPy arrays and performs
+preprocessing during <code>fit()</code>. In the version pinned by this
+repository, preprocessing includes:</p>
+<table>
+<thead>
+<tr>
+<th>Input condition</th>
+<th>Wrapper behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Numerical missing values</td>
+<td>Mean imputation</td>
+</tr>
+<tr>
+<td>Categorical values</td>
+<td>Ordinal encoding; unseen/missing values receive a sentinel</td>
+</tr>
+<tr>
+<td>Datetime-like columns</td>
+<td>Parse and expand year, month, day, and weekday features</td>
+</tr>
+<tr>
+<td>Constant columns</td>
+<td>Remove before ensemble generation</td>
+</tr>
+<tr>
+<td>Large outliers</td>
+<td>Clip using configured standardized thresholds</td>
+</tr>
+<tr>
+<td>Regression target</td>
+<td>Standardize for inference and invert predictions afterward</td>
+</tr>
+<tr>
+<td>Multiple ensemble views</td>
+<td>Apply normalization, feature permutations, and class shifts</td>
+</tr>
+</tbody>
+</table>
+<p>These are wrapper operations, not learned weight updates. See the
+pinned upstream <a
+href="https://github.com/google-research/tabfm/blob/cb6ba46b7ebc9a6581a81827e14e9c246202afb9/tabfm/src/classifier_and_regressor.py"><code>classifier_and_regressor.py</code>
+source</a> for the authoritative implementation.</p>
+</section>
+<section id="7-system-prerequisites-and-feasibility" class="level3">
+<h3>7. System prerequisites and feasibility</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Project baseline</th>
+<th>Why it matters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python</td>
+<td>Exactly 3.12.10 for this repository</td>
+<td>Matches <code>.python-version</code> and locked environment</td>
+</tr>
+<tr>
+<td>Package manager</td>
+<td>uv</td>
+<td>Reproduces <code>uv.lock</code> without
+<code>requirements.txt</code> drift</td>
+</tr>
+<tr>
+<td>Backend</td>
+<td>PyTorch 2.12.1</td>
+<td>This app loads the official PyTorch checkpoint</td>
+</tr>
+<tr>
+<td>GPU</td>
+<td>NVIDIA CUDA recommended</td>
+<td>CPU fallback is functional but may be impractically slow</td>
+</tr>
+<tr>
+<td>Disk</td>
+<td>About 6.56 GB per task checkpoint, plus cache headroom</td>
+<td>Classification and regression weights download separately</td>
+</tr>
+<tr>
+<td>RAM/VRAM</td>
+<td>Dataset- and context-dependent</td>
+<td>Attention/cache memory grows with rows, features, tests, and
+ensemble members</td>
+</tr>
+<tr>
+<td>Network</td>
+<td>Needed on first model/provider download</td>
+<td>Cached checkpoints can be reused afterward</td>
+</tr>
+<tr>
+<td>License</td>
+<td>Explicit non-commercial acknowledgement</td>
+<td>The app blocks model loading until acknowledged</td>
+</tr>
+</tbody>
+</table>
+<p>The Hugging Face repository reports approximately 6.56 GB for
+classification and 6.59 GB for regression (<a
+href="https://huggingface.co/api/models/google/tabfm-1.0.0-pytorch/tree/main/classification">classification
+files</a>, <a
+href="https://huggingface.co/api/models/google/tabfm-1.0.0-pytorch/tree/main/regression">regression
+files</a>). The local workbench applies these practical limits:</p>
+<ul>
+<li>at least two labeled context rows;</li>
+<li>one to 500 feature columns;</li>
+<li>two to ten classification classes;</li>
+<li>at most 5,000 context rows per ensemble member;</li>
+<li>eight ensemble members and batch size one.</li>
+</ul>
+<div class="caution">
+<div class="title">
+<p>Caution</p>
+</div>
+<p>Passing a validation check does not guarantee enough VRAM. Wide
+tables, long contexts, large prediction batches, and cached attention
+state interact. Begin with a small representative context and increase
+it while monitoring memory.</p>
+</div>
+</section>
+<section id="8-when-to-use-which-model-family" class="level3">
+<h3>8. When to use which model family</h3>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Recommended starting point</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Need a strong result immediately with minimal tuning</td>
+<td>TabFM</td>
+<td>Context-based zero-shot workflow</td>
+</tr>
+<tr>
+<td>Strict CPU latency or tiny artifact budget</td>
+<td>GBDT</td>
+<td>Compact, mature CPU serving</td>
+</tr>
+<tr>
+<td>More than ten classes</td>
+<td>GBDT or another classifier</td>
+<td>TabFM hard class limit</td>
+</tr>
+<tr>
+<td>Commercial or production use</td>
+<td>GBDT/appropriately licensed model</td>
+<td>TabFM weights prohibit this use</td>
+</tr>
+<tr>
+<td>Need extensive task-specific optimization</td>
+<td>GBDT or tunable neural model</td>
+<td>TabFM v1.0.0 does not support fine-tuning</td>
+</tr>
+<tr>
+<td>Need a benchmark challenger</td>
+<td>Evaluate both</td>
+<td>Performance depends on the dataset and validation protocol</td>
+</tr>
+</tbody>
+</table>
+<p>The responsible workflow is empirical: define a representative
+held-out set, run TabFM without leakage, compare it with a tuned
+baseline under the same metric, and choose using accuracy, latency,
+memory, explainability, and licensing—not headline benchmark rank
+alone.</p>
+</section>
+<section id="knowledge-check" class="level3">
+<h3>Knowledge check</h3>
+<ol type="1">
+<li>Why can <code>TabFMClassifier.fit(X, y)</code> run without changing
+pretrained weights?</li>
+<li>Which part of the architecture makes ICL over many cells
+cheaper?</li>
+<li>Why is ten classes a different kind of constraint from the
+workbench's 5,000-row cap?</li>
+<li>Under what deployment constraints would a GBDT remain the safer
+choice?</li>
+</ol>
+<p>Answers: <code>fit()</code> prepares encoders/context; row
+compression; ten classes is architectural while 5,000 rows is a local
+wrapper setting; and commercial licensing, tight CPU latency, or compact
+artifacts favor a GBDT.</p>
+</section>
+<section id="next-step" class="level3">
+<h3>Next step</h3>
+<p>Continue to <a href="02_installation.md">02 — Installation and
+Credentials</a> to create a reproducible local environment and configure
+provider access without exposing secrets.</p>
+</section>
+<section id="references" class="level3">
+<h3>References</h3>
+<ul>
+<li><a
+href="https://research.google/blog/introducing-tabfm-a-zero-shot-foundation-model-for-tabular-data/">Google
+Research: Introducing TabFM</a></li>
+<li><a
+href="https://github.com/google-research/tabfm/tree/cb6ba46b7ebc9a6581a81827e14e9c246202afb9">Google
+Research TabFM source repository</a></li>
+<li><a href="https://huggingface.co/google/tabfm-1.0.0-pytorch">TabFM
+v1.0.0 PyTorch model card</a></li>
+<li><a
+href="https://huggingface.co/google/tabfm-1.0.0-pytorch/blob/main/classification/config.json">TabFM
+PyTorch classification configuration</a></li>
+<li><a href="https://proceedings.mlr.press/v97/lee19d.html">Set
+Transformer</a></li>
+<li><a href="https://arxiv.org/abs/2104.09864">RoFormer / RoPE</a></li>
+<li><a href="https://arxiv.org/abs/1603.02754">XGBoost</a></li>
+<li><a
+href="https://proceedings.neurips.cc/paper/2017/hash/6449f44a102fde848669bdd9eb6b76fa-Abstract.html">LightGBM</a></li>
+</ul>
+</section>
+</section>
+<section id="installation" class="level2">
+<h2>02 — Installation, Environments, and Credentials</h2>
+<p><a href="01_introduction.md">← Introduction</a> · <a
+href="../../README.md#zero-to-master-tutorial">Tutorial index</a> · <a
+href="03_data_handling.md">Next: Data Handling →</a></p>
+<p>This chapter creates a reproducible Python 3.12 environment, selects
+a CPU or CUDA runtime, and configures optional Kaggle, Hugging Face, and
+MCP access. Commands are PowerShell-first; Bash equivalents follow each
+platform-specific step.</p>
+<div class="important">
+<div class="title">
+<p>Important</p>
+</div>
+<p>This repository uses <strong>uv</strong>,
+<code>pyproject.toml</code>, and <code>uv.lock</code> as its only
+dependency workflow. Do not create <code>requirements.txt</code> or
+install project packages with system <code>pip</code>.</p>
+</div>
+<section id="1-installation-flow" class="level3">
+<h3>1. Installation flow</h3>
+<pre class="mermaid"><code>flowchart TD
+    A[Clone repository] --&gt; B[Install or verify uv]
+    B --&gt; C[Install Python 3.12.10]
+    C --&gt; D{Environment style}
+    D --&gt;|Recommended| E[uv-managed .venv]
+    D --&gt;|Optional| F[Active Conda environment]
+    E --&gt; G{Runtime}
+    F --&gt; G
+    G --&gt;|NVIDIA CUDA 13.0| H[Sync cu130 + integrations]
+    G --&gt;|CPU| I[Sync cpu + integrations]
+    H --&gt; J[Create .env]
+    I --&gt; J
+    J --&gt; K[Review and accept weight license]
+    K --&gt; L[Run Streamlit on 127.0.0.1]</code></pre>
+</section>
+<section id="2-prerequisites" class="level3">
+<h3>2. Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th style="text-align: right;">Required</th>
+<th>Verification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Git</td>
+<td style="text-align: right;">Yes</td>
+<td><code>git --version</code></td>
+</tr>
+<tr>
+<td>uv</td>
+<td style="text-align: right;">Yes</td>
+<td><code>uv --version</code></td>
+</tr>
+<tr>
+<td>Python 3.12.10</td>
+<td style="text-align: right;">Managed by uv or Conda</td>
+<td><code>python --version</code></td>
+</tr>
+<tr>
+<td>Free disk</td>
+<td style="text-align: right;">8 GB for one checkpoint; 16 GB
+recommended for both and cache</td>
+<td>Check drive properties or <code>df -h</code></td>
+</tr>
+<tr>
+<td>NVIDIA driver</td>
+<td style="text-align: right;">Only for CUDA runtime</td>
+<td><code>nvidia-smi</code></td>
+</tr>
+<tr>
+<td>Network</td>
+<td style="text-align: right;">First dependency/model/provider
+download</td>
+<td>Confirm HTTPS access to GitHub and Hugging Face</td>
+</tr>
+<tr>
+<td>TabFM license acceptance</td>
+<td style="text-align: right;">Before model loading</td>
+<td>Review the <a
+href="https://huggingface.co/google/tabfm-1.0.0-pytorch/blob/main/LICENSE">official
+license</a></td>
+</tr>
+</tbody>
+</table>
+<p>TabFM itself supports Python 3.11+, but this repository deliberately
+locks Python <strong>3.12.10</strong> for reproducibility. uv creates a
+persistent <code>.venv</code> next to <code>pyproject.toml</code> and
+<code>uv run</code> executes inside it (<a
+href="https://docs.astral.sh/uv/concepts/projects/layout/">uv project
+environments</a>).</p>
+</section>
+<section id="3-clone-the-workbench" class="level3">
+<h3>3. Clone the workbench</h3>
+<section id="powershell" class="level4">
+<h4>PowerShell</h4>
+<pre class="powershell"><code>Set-Location D:\AI
+git clone https://github.com/pypi-ahmad/google-tabfm-project.git
+Set-Location google-tabfm-project</code></pre>
+</section>
+<section id="bash" class="level4">
+<h4>Bash</h4>
+<pre class="bash"><code>cd ~/projects
+git clone https://github.com/pypi-ahmad/google-tabfm-project.git
+cd google-tabfm-project</code></pre>
+<p>Verify that the lockfile and application entry point are present:</p>
+<pre class="powershell"><code>Get-Item pyproject.toml, uv.lock, app.py</code></pre>
+<pre class="bash"><code>ls pyproject.toml uv.lock app.py</code></pre>
+<div class="note">
+<div class="title">
+<p>Note</p>
+</div>
+<p>The expected repository URL becomes live after the GitHub repository
+is created. If you already have the source tree locally, enter that
+directory and continue at the next section.</p>
+</div>
+</section>
+</section>
+<section id="4-install-uv-and-python" class="level3">
+<h3>4. Install uv and Python</h3>
+<p>Install uv using the platform method from the <a
+href="https://docs.astral.sh/uv/getting-started/installation/">official
+uv installation guide</a>. On a machine where uv is already
+available:</p>
+<pre class="powershell"><code>uv self update
+uv python install 3.12.10
+uv python pin 3.12.10</code></pre>
+<pre class="bash"><code>uv self update
+uv python install 3.12.10
+uv python pin 3.12.10</code></pre>
+<p><code>uv python pin</code> keeps <code>.python-version</code> aligned
+with the repository. It is already committed as <code>3.12.10</code>;
+running the command is a verification step rather than a version
+change.</p>
+</section>
+<section id="5-choose-an-environment-style" class="level3">
+<h3>5. Choose an environment style</h3>
+<section id="option-a--uv-managed-venv-recommended" class="level4">
+<h4>Option A — uv-managed <code>.venv</code> (recommended)</h4>
+<p>No manual <code>python -m venv</code> call is needed.
+<code>uv sync</code> creates and synchronizes <code>.venv</code> from
+the locked project metadata.</p>
+<p>Choose exactly one runtime extra:</p>
+<pre class="powershell"><code># NVIDIA GPU with the repository&#39;s CUDA 13.0 PyTorch index
+uv sync --locked --extra cu130 --extra integrations
+
+# OR: CPU-only PyTorch
+uv sync --locked --extra cpu --extra integrations</code></pre>
+<pre class="bash"><code># NVIDIA GPU with the repository&#39;s CUDA 13.0 PyTorch index
+uv sync --locked --extra cu130 --extra integrations
+
+# OR: CPU-only PyTorch
+uv sync --locked --extra cpu --extra integrations</code></pre>
+<p>The <code>cu130</code> and <code>cpu</code> extras conflict
+intentionally, preventing two PyTorch builds from entering the same
+environment. <code>integrations</code> installs Kaggle, Hugging Face
+Hub, and MCP clients.</p>
+<p>Activation is optional because <code>uv run</code> selects the
+environment automatically. If you prefer an activated shell:</p>
+<pre class="powershell"><code>.\.venv\Scripts\Activate.ps1</code></pre>
+<pre class="bash"><code>source .venv/bin/activate</code></pre>
+<p>The activation commands follow uv's documented project workflow (<a
+href="https://docs.astral.sh/uv/guides/projects/">uv projects
+guide</a>).</p>
+</section>
+<section id="option-b--conda-supplies-python-uv-supplies-dependencies"
+class="level4">
+<h4>Option B — Conda supplies Python, uv supplies dependencies</h4>
+<p>Use this only when your organization standardizes environment
+activation through Conda. Conda creates the interpreter environment; uv
+remains the package resolver and uses the committed lock.</p>
+<pre class="powershell"><code>conda create --name tabfm-workbench python=3.12.10 -y
+conda activate tabfm-workbench
+uv sync --active --locked --extra cpu --extra integrations</code></pre>
+<pre class="bash"><code>conda create --name tabfm-workbench python=3.12.10 -y
+conda activate tabfm-workbench
+uv sync --active --locked --extra cpu --extra integrations</code></pre>
+<p>Replace <code>--extra cpu</code> with <code>--extra cu130</code> only
+after confirming the NVIDIA driver/runtime path. The uv
+<code>--active</code> flag prefers the currently activated environment
+(<a href="https://docs.astral.sh/uv/reference/cli/#uv-sync">uv CLI
+reference</a>). Without it, project commands default to
+<code>.venv</code>.</p>
+<div class="warning">
+<div class="title">
+<p>Warning</p>
+</div>
+<p>Do not combine <code>conda install</code>, <code>pip install</code>,
+and <code>uv sync</code> for the same project packages. That creates an
+environment whose installed state no longer corresponds to
+<code>uv.lock</code>.</p>
+</div>
+</section>
+</section>
+<section id="6-validate-the-python-and-pytorch-runtime" class="level3">
+<h3>6. Validate the Python and PyTorch runtime</h3>
+<pre class="powershell"><code>uv run python --version
+uv run python -c &quot;import torch; print(torch.__version__); print(torch.cuda.is_available())&quot;</code></pre>
+<pre class="bash"><code>uv run python --version
+uv run python -c &#39;import torch; print(torch.__version__); print(torch.cuda.is_available())&#39;</code></pre>
+<p>Expected outcomes:</p>
+<table>
+<thead>
+<tr>
+<th>Selected runtime</th>
+<th
+style="text-align: right;"><code>torch.cuda.is_available()</code></th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cu130</code> with compatible NVIDIA driver</td>
+<td style="text-align: right;"><code>True</code></td>
+<td>App can resolve <code>TABFM_DEVICE=auto</code> to CUDA</td>
+</tr>
+<tr>
+<td>CPU extra</td>
+<td style="text-align: right;"><code>False</code></td>
+<td>App resolves automatic device selection to CPU</td>
+</tr>
+<tr>
+<td><code>cu130</code> but <code>False</code></td>
+<td style="text-align: right;">Unexpected</td>
+<td>Check driver, GPU visibility, and installed PyTorch build</td>
+</tr>
+</tbody>
+</table>
+<p>TabFM's first checkpoint load can take several minutes. Model files
+are automatically downloaded from
+<code>google/tabfm-1.0.0-pytorch</code>; classification and regression
+are separate checkpoints (<a
+href="https://github.com/google-research/tabfm/blob/cb6ba46b7ebc9a6581a81827e14e9c246202afb9/tabfm/src/pytorch/tabfm_v1_0_0.py">official
+loader source</a>).</p>
+</section>
+<section id="7-create-the-environment-file" class="level3">
+<h3>7. Create the environment file</h3>
+<p>Copy the committed template. The application does not automatically
+parse <code>.env</code>; the launch command passes it explicitly through
+<code>uv run --env-file .env</code>.</p>
+<pre class="powershell"><code>Copy-Item .env.example .env</code></pre>
+<pre class="bash"><code>cp .env.example .env</code></pre>
+<p><code>.env</code> is gitignored. Keep it local, never paste it into
+issues, and never commit it.</p>
+<section id="configuration-reference" class="level4">
+<h4>Configuration reference</h4>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TABFM_ACCEPT_NON_COMMERCIAL_LICENSE</code></td>
+<td><code>false</code></td>
+<td>Enables model loading only after license review</td>
+</tr>
+<tr>
+<td><code>TABFM_DEVICE</code></td>
+<td><code>auto</code></td>
+<td><code>auto</code>, <code>cuda</code>, or <code>cpu</code></td>
+</tr>
+<tr>
+<td><code>TABFM_MODEL_CACHE_DIR</code></td>
+<td><code>data/cache/models</code></td>
+<td>Reserved; current TabFM loader uses the Hugging Face default
+cache</td>
+</tr>
+<tr>
+<td><code>TABFM_SESSION_TTL_HOURS</code></td>
+<td><code>24</code></td>
+<td>Reserved; automatic session expiry is not currently implemented</td>
+</tr>
+<tr>
+<td><code>TABFM_MAX_UPLOAD_MB</code></td>
+<td><code>500</code></td>
+<td>Per-file local upload limit</td>
+</tr>
+<tr>
+<td><code>TABFM_MAX_DOWNLOAD_MB</code></td>
+<td><code>500</code></td>
+<td>Direct URL streamed download limit</td>
+</tr>
+<tr>
+<td><code>TABFM_ALLOW_INSECURE_HTTP</code></td>
+<td><code>false</code></td>
+<td>Allows plain HTTP only when explicitly enabled</td>
+</tr>
+<tr>
+<td><code>HF_TOKEN</code></td>
+<td>Empty</td>
+<td>Optional Hugging Face dataset access token</td>
+</tr>
+<tr>
+<td><code>KAGGLE_API_TOKEN</code></td>
+<td>Empty</td>
+<td>Recommended non-interactive Kaggle token</td>
+</tr>
+<tr>
+<td><code>KAGGLE_USERNAME</code></td>
+<td>Empty</td>
+<td>Legacy Kaggle credential pair, part 1</td>
+</tr>
+<tr>
+<td><code>KAGGLE_KEY</code></td>
+<td>Empty</td>
+<td>Legacy Kaggle credential pair, part 2</td>
+</tr>
+<tr>
+<td><code>HF_MCP_URL</code></td>
+<td>Empty</td>
+<td>Optional Hugging Face discovery MCP endpoint</td>
+</tr>
+<tr>
+<td><code>KAGGLE_MCP_URL</code></td>
+<td>Kaggle MCP URL</td>
+<td>Optional Kaggle discovery endpoint</td>
+</tr>
+</tbody>
+</table>
+<p>Settings validate upload/download ranges and accepted device names
+when Streamlit starts. Empty provider variables are valid; only the
+associated integration remains unauthenticated.</p>
+</section>
+</section>
+<section id="8-review-and-acknowledge-the-model-license" class="level3">
+<h3>8. Review and acknowledge the model license</h3>
+<p>Read the <a
+href="https://huggingface.co/google/tabfm-1.0.0-pytorch/blob/main/LICENSE">TabFM
+Non-Commercial License v1.0</a>. It permits testing, evaluation, and
+research not tied to commercial gain or production. It explicitly
+excludes revenue-generating activity, production/end-user interaction,
+commercial decision-making, and commercial model
+training/distillation.</p>
+<p>Only after confirming your use is permitted, edit:</p>
+<pre class="dotenv"><code>TABFM_ACCEPT_NON_COMMERCIAL_LICENSE=true</code></pre>
+<div class="caution">
+<div class="title">
+<p>Caution</p>
+</div>
+<p>This Boolean is a local safety gate, not a grant of rights and not
+legal advice. Setting it does not override the model license.</p>
+</div>
+</section>
+<section id="9-configure-hugging-face-access" class="level3">
+<h3>9. Configure Hugging Face access</h3>
+<p>The public TabFM checkpoint is currently ungated, so it can download
+without a token. A token is needed for private or gated datasets and may
+improve authenticated rate-limit behavior.</p>
+<section id="create-least-privilege-access" class="level4">
+<h4>Create least-privilege access</h4>
+<ol type="1">
+<li>Open <a href="https://huggingface.co/settings/tokens">Hugging Face
+token settings</a>.</li>
+<li>Create a dedicated <strong>read</strong> token, or a fine-grained
+token limited to required repositories.</li>
+<li>If a dataset is gated, accept its access conditions in the browser
+using the same account.</li>
+<li>Place the token in local <code>.env</code>:</li>
+</ol>
+<pre class="dotenv"><code>HF_TOKEN=hf_your_local_read_token</code></pre>
+<p>Hugging Face documents <code>read</code> tokens as sufficient for
+downloading repositories you can access; <code>write</code> is required
+only to create or modify repositories (<a
+href="https://huggingface.co/docs/hub/security-tokens">token roles</a>).
+The app passes <code>HF_TOKEN</code> directly to <code>HfApi</code> and
+<code>hf_hub_download</code> and never displays its value.</p>
+</section>
+<section id="diagnose-hugging-face-authorization" class="level4">
+<h4>Diagnose Hugging Face authorization</h4>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Likely cause</th>
+<th>Resolution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>401 Unauthorized</code></td>
+<td>Missing, malformed, expired, or revoked token</td>
+<td>Recreate a read token and restart the app</td>
+</tr>
+<tr>
+<td><code>403 Forbidden</code></td>
+<td>Token lacks repository scope or gated access was not accepted</td>
+<td>Grant fine-grained read access and accept dataset terms</td>
+</tr>
+<tr>
+<td>Public search works; private repo is absent</td>
+<td>Implicit token disabled or insufficient scope</td>
+<td>Ensure <code>HF_TOKEN</code> is loaded and covers the
+repository</td>
+</tr>
+<tr>
+<td>Dataset lists but file download fails</td>
+<td>File/revision access differs</td>
+<td>Confirm the selected file exists and account can read it</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="10-configure-kaggle-access" class="level3">
+<h3>10. Configure Kaggle access</h3>
+<p>The current Kaggle CLI supports OAuth, <code>KAGGLE_API_TOKEN</code>,
+an access-token file, and legacy <code>kaggle.json</code> credentials
+(<a
+href="https://github.com/Kaggle/kaggle-cli/blob/main/docs/README.md#authentication">official
+authentication guide</a>). This workbench supports the recommended
+environment token and the legacy username/key methods.</p>
+<section id="option-a--environment-api-token-recommended"
+class="level4">
+<h4>Option A — environment API token (recommended)</h4>
+<ol type="1">
+<li>Open <a href="https://www.kaggle.com/settings/api">Kaggle API
+settings</a>.</li>
+<li>Create/copy an API token.</li>
+<li>Set it only in <code>.env</code>:</li>
+</ol>
+<pre class="dotenv"><code>KAGGLE_API_TOKEN=your_local_kaggle_token</code></pre>
+</section>
+<section id="option-b--legacy-kagglejson" class="level4">
+<h4>Option B — legacy <code>kaggle.json</code></h4>
+<p>From Kaggle settings, choose <strong>Create Legacy API Key</strong>.
+Move the downloaded JSON file into the standard private directory.</p>
+<p>PowerShell:</p>
+<pre class="powershell"><code>$kaggleDirectory = Join-Path $HOME &#39;.kaggle&#39;
+New-Item -ItemType Directory -Force -Path $kaggleDirectory | Out-Null
+Move-Item -LiteralPath &quot;$HOME\Downloads\kaggle.json&quot; -Destination $kaggleDirectory
+icacls &quot;$kaggleDirectory\kaggle.json&quot; /inheritance:r /grant:r &quot;${env:USERNAME}:(R,W)&quot;</code></pre>
+<p>Bash:</p>
+<pre class="bash"><code>mkdir -p &quot;$HOME/.kaggle&quot;
+mv &quot;$HOME/Downloads/kaggle.json&quot; &quot;$HOME/.kaggle/kaggle.json&quot;
+chmod 600 &quot;$HOME/.kaggle/kaggle.json&quot;</code></pre>
+<p>The legacy file has this shape:</p>
+<pre class="json"><code>{
+  &quot;username&quot;: &quot;your-kaggle-username&quot;,
+  &quot;key&quot;: &quot;your-legacy-api-key&quot;
+}</code></pre>
+<p>Do not copy real values into documentation, tests, or tracked files.
+Kaggle's Python client reads the standard credential file during
+<code>KaggleApi.authenticate()</code>.</p>
+</section>
+<section id="option-c--legacy-environment-pair" class="level4">
+<h4>Option C — legacy environment pair</h4>
+<p>If file credentials are disallowed by policy:</p>
+<pre class="dotenv"><code>KAGGLE_USERNAME=your-kaggle-username
+KAGGLE_KEY=your-legacy-api-key</code></pre>
+<p>Use one Kaggle method at a time to make failures diagnosable.</p>
+</section>
+</section>
+<section id="11-optional-mcp-discovery" class="level3">
+<h3>11. Optional MCP discovery</h3>
+<p>MCP is used only to discover dataset references. It does not replace
+native Kaggle or Hugging Face downloads. Configure endpoints only when
+you trust the server:</p>
+<pre class="dotenv"><code>HF_MCP_URL=https://trusted.example/mcp
+KAGGLE_MCP_URL=https://www.kaggle.com/mcp</code></pre>
+<p>The app initializes a Streamable HTTP MCP session and will call only
+an allowlisted dataset-search tool named <code>search_datasets</code>,
+<code>dataset_search</code>, or <code>list_datasets</code>. Provider
+SDKs perform actual downloads.</p>
+</section>
+<section id="12-start-the-application" class="level3">
+<h3>12. Start the application</h3>
+<pre class="powershell"><code>uv run --env-file .env streamlit run app.py</code></pre>
+<pre class="bash"><code>uv run --env-file .env streamlit run app.py</code></pre>
+<p>Streamlit starts on <code>http://127.0.0.1:8501</code> by default.
+The committed configuration binds only to loopback, caps uploads at 500
+MB, disables telemetry, and uses polling file watching. The standard CLI
+pattern is documented by Streamlit (<a
+href="https://docs.streamlit.io/develop/api-reference/cli/run">run an
+app</a>). Stop it with <code>Ctrl+C</code>.</p>
+<section id="startup-checklist" class="level4">
+<h4>Startup checklist</h4>
+<table>
+<thead>
+<tr>
+<th>Sidebar item</th>
+<th>Healthy state</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>License</td>
+<td><code>Ready</code> after explicit acknowledgement</td>
+</tr>
+<tr>
+<td>Device preference</td>
+<td>Matches <code>.env</code>; automatic resolution occurs during model
+load</td>
+</tr>
+<tr>
+<td>Hugging Face</td>
+<td><code>Ready</code> only when <code>HF_TOKEN</code> is present</td>
+</tr>
+<tr>
+<td>Kaggle</td>
+<td><code>Ready</code> when environment credentials are present;
+file-only credentials may still authenticate on use</td>
+</tr>
+<tr>
+<td>MCP endpoint</td>
+<td><code>Ready</code> for configured endpoint</td>
+</tr>
+<tr>
+<td>Remote imports</td>
+<td>HTTPS required unless insecure HTTP is explicitly enabled</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="13-common-installation-failures" class="level3">
+<h3>13. Common installation failures</h3>
+<table>
+<thead>
+<tr>
+<th>Failure</th>
+<th>Diagnosis</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>uv chooses the wrong Python</td>
+<td><code>.python-version</code> ignored or Python missing</td>
+<td>Run <code>uv python install 3.12.10</code> and
+<code>uv sync --locked</code></td>
+</tr>
+<tr>
+<td>PowerShell blocks activation</td>
+<td>Execution policy prevents <code>Activate.ps1</code></td>
+<td>Use <code>uv run</code> without activation or apply an approved
+user-scope policy</td>
+</tr>
+<tr>
+<td><code>torch.cuda.is_available()</code> is false</td>
+<td>CPU wheel or incompatible driver</td>
+<td>Re-sync the <code>cu130</code> extra and verify
+<code>nvidia-smi</code></td>
+</tr>
+<tr>
+<td>Resolver reports conflicting extras</td>
+<td>Both <code>cpu</code> and <code>cu130</code> were selected</td>
+<td>Sync exactly one runtime extra</td>
+</tr>
+<tr>
+<td>TabFM runtime import fails</td>
+<td>Runtime extra was omitted</td>
+<td>Add <code>--extra cpu</code> or <code>--extra cu130</code></td>
+</tr>
+<tr>
+<td>Model button remains blocked</td>
+<td>License variable is false or <code>.env</code> was not passed</td>
+<td>Review license, edit <code>.env</code>, launch with
+<code>--env-file .env</code></td>
+</tr>
+<tr>
+<td>First model load appears stalled</td>
+<td>Multi-gigabyte checkpoint download</td>
+<td>Check network/cache growth and wait; do not restart repeatedly</td>
+</tr>
+<tr>
+<td>CPU prediction is extremely slow</td>
+<td>Large transformer on CPU</td>
+<td>Reduce context/test rows or use a compatible NVIDIA GPU</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="14-development-verification" class="level3">
+<h3>14. Development verification</h3>
+<p>These checks do not download TabFM weights because model-facing tests
+use deterministic fakes:</p>
+<pre class="powershell"><code>uv run pytest -p no:cacheprovider
+uv run ruff check .
+uv run mypy</code></pre>
+<pre class="bash"><code>uv run pytest -p no:cacheprovider
+uv run ruff check .
+uv run mypy</code></pre>
+</section>
+<section id="next-step-1" class="level3">
+<h3>Next step</h3>
+<p>Continue to <a href="03_data_handling.md">03 — Data Handling</a> to
+import local and remote datasets while preserving schema, provenance,
+and credential boundaries.</p>
+</section>
+</section>
+<section id="data-handling" class="level2">
+<h2>03 — Data Engineering and Dataset Ingestion</h2>
+<p><a href="02_installation.md">← Installation</a> · <a
+href="../../README.md#zero-to-master-tutorial">Tutorial index</a> · <a
+href="04_tabfm_mastery.md">Next: TabFM Mastery →</a></p>
+<p>TabFM receives a table, not a fixed feature schema designed by the
+model author. Data ingestion is therefore part of the model contract:
+column names, dtypes, missing targets, and provenance all affect what
+becomes context and what becomes a prediction request.</p>
+<section id="1-end-to-end-ingestion-flow" class="level3">
+<h3>1. End-to-end ingestion flow</h3>
+<pre class="mermaid"><code>flowchart TD
+    A{Dataset source} --&gt;|Upload| B[CSV / Parquet / XLSX bytes]
+    A --&gt;|Direct URL| C[Validate HTTPS and destination]
+    A --&gt;|Hugging Face| D[Search repository and select file]
+    A --&gt;|Kaggle| E[Search dataset and download archive]
+    A --&gt;|MCP| F[Read-only discovery result]
+    C --&gt; B
+    D --&gt; B
+    E --&gt; B
+    F -. native provider download .-&gt; D
+    F -. native provider download .-&gt; E
+    B --&gt; G[Extension-specific pandas parser]
+    G --&gt; H{Valid non-empty table?}
+    H --&gt;|No| I[Isolated error for that source]
+    H --&gt;|Yes| J[Register artifact and provenance]
+    J --&gt; K[Choose active context dataset]
+    K --&gt; L[Inspect rows, columns, target, and dtypes]</code></pre>
+<p>The application parses each uploaded file independently. One
+malformed file produces one visible error; valid siblings remain
+available. Loaded tables are registered in Streamlit session state, and
+the selected active artifact feeds the Model &amp; Context tab.</p>
+</section>
+<section id="2-supported-table-formats" class="level3">
+<h3>2. Supported table formats</h3>
+<table>
+<thead>
+<tr>
+<th>Format</th>
+<th>Extension</th>
+<th>Parser</th>
+<th>Strengths</th>
+<th>Important behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CSV</td>
+<td><code>.csv</code></td>
+<td><code>pandas.read_csv</code></td>
+<td>Portable, inspectable, broadly supported</td>
+<td>Encoding/delimiter/type inference can be ambiguous</td>
+</tr>
+<tr>
+<td>Apache Parquet</td>
+<td><code>.parquet</code></td>
+<td><code>pandas.read_parquet</code> with PyArrow</td>
+<td>Preserves typed columns; compact and fast</td>
+<td>Requires valid Parquet metadata</td>
+</tr>
+<tr>
+<td>Excel</td>
+<td><code>.xlsx</code></td>
+<td><code>pandas.read_excel</code> with OpenPyXL</td>
+<td>Familiar analyst workflow</td>
+<td>Loads the first worksheet only</td>
+</tr>
+</tbody>
+</table>
+<p>The loader rejects unsupported extensions, zero-row tables,
+zero-column tables, duplicate column names, and parser exceptions. File
+extensions select the parser; content sniffing is intentionally not
+used.</p>
+<div class="warning">
+<div class="title">
+<p>Warning</p>
+</div>
+<p>A file renamed from <code>.json</code> to <code>.csv</code> does not
+become CSV. The selected parser will fail, and the app reports the
+parsing error without silently guessing another format.</p>
+</div>
+</section>
+<section id="3-design-a-model-ready-table" class="level3">
+<h3>3. Design a model-ready table</h3>
+<p>Use one row per observation and one column per feature. The target
+can be complete or partly blank, depending on the prediction
+workflow.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;"><code>age</code></th>
+<th><code>city</code></th>
+<th><code>joined_at</code></th>
+<th><code>churned</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">31</td>
+<td>Pune</td>
+<td>2024-01-10</td>
+<td>no</td>
+</tr>
+<tr>
+<td style="text-align: right;">47</td>
+<td>Mumbai</td>
+<td>2022-08-03</td>
+<td>yes</td>
+</tr>
+<tr>
+<td style="text-align: right;">29</td>
+<td>Pune</td>
+<td>2025-02-19</td>
+<td><em>(blank)</em></td>
+</tr>
+</tbody>
+</table>
+<p>If <code>churned</code> is selected as the target:</p>
+<ul>
+<li>the first two rows are labeled context;</li>
+<li>the third row is an unlabeled test case;</li>
+<li><code>age</code>, <code>city</code>, and <code>joined_at</code>
+become features.</li>
+</ul>
+<section id="pre-import-quality-contract" class="level4">
+<h4>Pre-import quality contract</h4>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Acceptable state</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Column names</td>
+<td>Unique and stable</td>
+<td>Prediction schemas align by name</td>
+</tr>
+<tr>
+<td>Rows</td>
+<td>At least two labeled rows to prepare a model</td>
+<td>The workbench enforces two context examples</td>
+</tr>
+<tr>
+<td>Features</td>
+<td>1–500 after dropping target</td>
+<td>Workbench feature cap</td>
+</tr>
+<tr>
+<td>Classification target</td>
+<td>2–10 unique labeled values</td>
+<td>TabFM hard class limit</td>
+</tr>
+<tr>
+<td>Regression target</td>
+<td>Numeric labeled values</td>
+<td>Metrics and checkpoint expect continuous numbers</td>
+</tr>
+<tr>
+<td>Missing feature values</td>
+<td>Allowed</td>
+<td>Wrapper imputes/encodes; missing columns are explicitly warned</td>
+</tr>
+<tr>
+<td>Target blanks</td>
+<td>Intentional</td>
+<td>They identify prediction rows in context-dataset mode</td>
+</tr>
+<tr>
+<td>Identifiers</td>
+<td>Remove if meaningless</td>
+<td>High-cardinality IDs can add noise and memorize row identity</td>
+</tr>
+<tr>
+<td>Leakage fields</td>
+<td>Remove</td>
+<td>Post-outcome columns invalidate evaluation</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="4-load-multiple-local-files" class="level3">
+<h3>4. Load multiple local files</h3>
+<ol type="1">
+<li>Start the app and open <strong>Data Loading</strong>.</li>
+<li>Expand <strong>Local files</strong>.</li>
+<li>Choose <strong>Upload CSV, Parquet, or XLSX files</strong>.</li>
+<li>Select one or more files in the file picker.</li>
+<li>Select <strong>Parse uploaded files</strong>.</li>
+<li>Review individual errors and the registered artifacts.</li>
+<li>Use <strong>Active context dataset</strong> to choose the table for
+modeling.</li>
+</ol>
+<pre class="mermaid"><code>sequenceDiagram
+    participant U as User
+    participant S as Streamlit
+    participant L as loader.py
+    U-&gt;&gt;S: Select N files
+    S-&gt;&gt;S: Reject files above configured upload size
+    loop Every allowed file
+        S-&gt;&gt;L: load_table(bytes, filename)
+        alt Valid table
+            L--&gt;&gt;S: DataFrame
+            S--&gt;&gt;U: Register artifact
+        else Invalid table
+            L--&gt;&gt;S: DataFormatError
+            S--&gt;&gt;U: Show file-specific error
+        end
+    end</code></pre>
+<p>The default application limit is 500 MB per uploaded file.
+Streamlit's server-level <code>maxUploadSize</code> and the app's
+<code>TABFM_MAX_UPLOAD_MB</code> check both apply. Raising only one may
+leave the other as the effective limit (<a
+href="https://docs.streamlit.io/develop/api-reference/widgets/st.file_uploader">Streamlit
+file uploader</a>).</p>
+<section id="duplicate-filenames" class="level4">
+<h4>Duplicate filenames</h4>
+<p>If two loaded artifacts share a filename, the application preserves
+both by appending a suffix: <code>train.csv</code>,
+<code>train (2).csv</code>, and so on. Changing the active artifact
+invalidates any prepared model context and prior predictions.</p>
+</section>
+</section>
+<section id="5-import-from-a-direct-url" class="level3">
+<h3>5. Import from a direct URL</h3>
+<p>Use this path for a direct link whose response body is a supported
+table—not a web page, landing page, JavaScript download, or ZIP
+archive.</p>
+<ol type="1">
+<li>Expand <strong>Direct URL</strong>.</li>
+<li>Paste an <code>https://</code> URL ending in <code>.csv</code>,
+<code>.parquet</code>, or <code>.xlsx</code>.</li>
+<li>Select <strong>Fetch URL</strong>.</li>
+<li>Inspect the active artifact preview and source label.</li>
+</ol>
+<section id="security-boundary" class="level4">
+<h4>Security boundary</h4>
+<p>Before sending a request, <code>remote.py</code> checks:</p>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>Default behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Scheme</td>
+<td>HTTPS only</td>
+</tr>
+<tr>
+<td>Embedded username/password</td>
+<td>Rejected</td>
+</tr>
+<tr>
+<td><code>localhost</code></td>
+<td>Rejected</td>
+</tr>
+<tr>
+<td>Literal private, loopback, link-local, or reserved IP</td>
+<td>Rejected</td>
+</tr>
+<tr>
+<td>DNS name resolving to any non-global address</td>
+<td>Rejected</td>
+</tr>
+<tr>
+<td>Redirects</td>
+<td>Disabled</td>
+</tr>
+<tr>
+<td>Connect timeout</td>
+<td>30 seconds</td>
+</tr>
+<tr>
+<td>Read timeout</td>
+<td>120 seconds</td>
+</tr>
+<tr>
+<td>Declared/streamed body size</td>
+<td>Capped by <code>TABFM_MAX_DOWNLOAD_MB</code></td>
+</tr>
+</tbody>
+</table>
+<p>The file is streamed into memory, and both the
+<code>Content-Length</code> header and actual accumulated bytes are
+checked. The filename comes from the URL path after percent
+decoding.</p>
+<div class="caution">
+<div class="title">
+<p>Caution</p>
+</div>
+<p>DNS validation reduces server-side request-forgery risk but cannot
+fully eliminate DNS rebinding between resolution and connection. Direct
+URL ingestion is intended for a trusted local user, not an exposed
+multi-tenant service.</p>
+</div>
+</section>
+<section id="plain-http-exception" class="level4">
+<h4>Plain HTTP exception</h4>
+<p>Only for a trusted source that cannot provide TLS, set:</p>
+<pre class="dotenv"><code>TABFM_ALLOW_INSECURE_HTTP=true</code></pre>
+<p>Restart the app. The sidebar displays a warning while HTTP is
+enabled. Return the setting to <code>false</code> immediately after use
+because plain HTTP content can be modified in transit.</p>
+</section>
+<section id="url-troubleshooting" class="level4">
+<h4>URL troubleshooting</h4>
+<table>
+<thead>
+<tr>
+<th>Error</th>
+<th>Meaning</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Only HTTPS allowed</td>
+<td>HTTP was used without opt-in</td>
+<td>Use HTTPS or explicitly enable trusted HTTP</td>
+</tr>
+<tr>
+<td>Hostname could not be resolved</td>
+<td>DNS failure</td>
+<td>Verify spelling, DNS, and network access</td>
+</tr>
+<tr>
+<td>Private/local URL rejected</td>
+<td>Address is not globally routable</td>
+<td>Download locally and use file upload instead</td>
+</tr>
+<tr>
+<td>Request failed with 3xx</td>
+<td>Server expects a redirect</td>
+<td>Use the final direct asset URL</td>
+</tr>
+<tr>
+<td>Unsupported file type</td>
+<td>URL path has no supported suffix</td>
+<td>Obtain a direct filename URL or upload locally</td>
+</tr>
+<tr>
+<td>Exceeds size limit</td>
+<td>Header or streamed body crossed the cap</td>
+<td>Use a smaller extract or raise the reviewed local limit</td>
+</tr>
+<tr>
+<td>Parser error</td>
+<td>Response is not the declared table format</td>
+<td>Open the URL separately and verify its content</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="6-retrieve-datasets-from-hugging-face-hub" class="level3">
+<h3>6. Retrieve datasets from Hugging Face Hub</h3>
+<p>The app uses the official <code>huggingface_hub</code> Python client.
+<code>HfApi.list_datasets</code> performs search,
+<code>list_repo_files(..., repo_type="dataset")</code> enumerates files,
+and <code>hf_hub_download</code> downloads the selected revision into
+the Hub cache (<a
+href="https://huggingface.co/docs/huggingface_hub/package_reference/hf_api">Hugging
+Face API</a>, <a
+href="https://huggingface.co/docs/huggingface_hub/guides/download">download
+guide</a>).</p>
+<section id="ui-workflow" class="level4">
+<h4>UI workflow</h4>
+<ol type="1">
+<li>Open <strong>Data Loading → Hugging Face Hub</strong>.</li>
+<li>Enter a keyword such as <code>titanic</code>.</li>
+<li>Select <strong>Search Hugging Face</strong>.</li>
+<li>Choose a repository ID from <strong>Dataset
+repository</strong>.</li>
+<li>Select <strong>List Hugging Face files</strong>.</li>
+<li>Choose one listed <code>.csv</code>, <code>.parquet</code>, or
+<code>.xlsx</code> file.</li>
+<li>Select <strong>Download Hugging Face file</strong>.</li>
+<li>Inspect the newly registered artifact.</li>
+</ol>
+<pre class="mermaid"><code>sequenceDiagram
+    participant UI as Streamlit UI
+    participant API as HfApi
+    participant Hub as Hugging Face Hub
+    participant WS as data/downloads/huggingface
+    UI-&gt;&gt;API: list_datasets(search=query)
+    API--&gt;&gt;UI: repository IDs
+    UI-&gt;&gt;API: list_repo_files(repo_type=dataset)
+    API--&gt;&gt;UI: supported table paths
+    UI-&gt;&gt;Hub: hf_hub_download(repo, filename, token)
+    Hub--&gt;&gt;WS: cached file copied to safe leaf filename
+    WS--&gt;&gt;UI: parse and register artifact</code></pre>
+<p>Nested repository paths are downloaded through the Hub client but
+copied into the workspace using only their safe leaf filename. Path
+traversal names are rejected. If another artifact already has that name,
+session registration adds a numerical suffix.</p>
+</section>
+<section id="public-private-and-gated-datasets" class="level4">
+<h4>Public, private, and gated datasets</h4>
+<table>
+<thead>
+<tr>
+<th>Repository type</th>
+<th>Token requirement</th>
+<th>Additional step</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Public, ungated</td>
+<td>Usually none</td>
+<td>Token remains optional</td>
+</tr>
+<tr>
+<td>Public, gated</td>
+<td>Read/fine-grained token</td>
+<td>Accept repository conditions in browser</td>
+</tr>
+<tr>
+<td>Private</td>
+<td>Token with read access</td>
+<td>Account or organization must grant access</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>HF_TOKEN</code> environment variable takes precedence over
+a locally stored Hub token (<a
+href="https://huggingface.co/docs/huggingface_hub/quick-start#authentication">Hub
+authentication</a>). A write token provides unnecessary privilege for
+this read-only workflow.</p>
+</section>
+</section>
+<section id="7-retrieve-datasets-from-kaggle" class="level3">
+<h3>7. Retrieve datasets from Kaggle</h3>
+<p>Kaggle datasets are addressed as <code>owner/dataset-slug</code>.
+Authentication occurs when the client calls
+<code>KaggleApi.authenticate()</code>.</p>
+<section id="ui-workflow-1" class="level4">
+<h4>UI workflow</h4>
+<ol type="1">
+<li>Open <strong>Data Loading → Kaggle</strong>.</li>
+<li>Enter a search term.</li>
+<li>Select <strong>Search Kaggle</strong>.</li>
+<li>Choose the dataset reference.</li>
+<li>Select <strong>List Kaggle files</strong>.</li>
+<li>Review the supported table files.</li>
+<li>Select <strong>Download Kaggle dataset</strong>.</li>
+<li>Inspect each supported file registered from the downloaded
+folder.</li>
+</ol>
+<p>The current adapter downloads and unzips the complete dataset into
+<code>data/downloads/kaggle/&lt;owner_dataset&gt;</code>, then registers
+only supported files returned by the file listing. Account for the
+archive's total size, not only the selected table sizes. Kaggle's
+official tutorial documents dataset search and download commands using
+the same API surface (<a
+href="https://github.com/Kaggle/kaggle-cli/blob/main/docs/tutorials.md#datasets">Kaggle
+dataset tutorial</a>).</p>
+</section>
+<section id="kaggle-troubleshooting" class="level4">
+<h4>Kaggle troubleshooting</h4>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Likely cause</th>
+<th>Resolution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Search fails during authentication</td>
+<td>No valid token source</td>
+<td>Configure <code>KAGGLE_API_TOKEN</code> or legacy credentials</td>
+</tr>
+<tr>
+<td><code>401</code>/permission error</td>
+<td>Expired or incorrect token</td>
+<td>Rotate token and restart Streamlit</td>
+</tr>
+<tr>
+<td>Dataset found but download denied</td>
+<td>Terms/competition access missing</td>
+<td>Accept required rules in the Kaggle browser UI</td>
+</tr>
+<tr>
+<td>No supported files listed</td>
+<td>Dataset contains ZIP/JSON/other formats only</td>
+<td>Convert a local extract to CSV, Parquet, or XLSX</td>
+</tr>
+<tr>
+<td>Disk usage is unexpectedly high</td>
+<td>Entire dataset archive was downloaded</td>
+<td>Remove unneeded files from the dedicated download folder after the
+session</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="8-discover-via-mcp" class="level3">
+<h3>8. Discover via MCP</h3>
+<p>MCP support deliberately separates <strong>discovery</strong> from
+<strong>download</strong>.</p>
+<pre class="mermaid"><code>flowchart LR
+    Q[Search query] --&gt; M[Trusted MCP endpoint]
+    M --&gt; A{Allowlisted search tool exists?}
+    A --&gt;|No| E[Reject server capability]
+    A --&gt;|Yes| R[Render discovery result as JSON]
+    R --&gt; U[User selects provider repository]
+    U --&gt; N[Native HF or Kaggle client downloads]</code></pre>
+<ol type="1">
+<li>Configure <code>HF_MCP_URL</code> or use the default
+<code>KAGGLE_MCP_URL</code>.</li>
+<li>Open <strong>MCP discovery</strong>.</li>
+<li>Select the provider and enter a query.</li>
+<li>Select <strong>Search MCP</strong>.</li>
+<li>Read the returned structured blocks.</li>
+<li>Use the native provider section to search/download the chosen
+dataset.</li>
+</ol>
+<p>The client calls only <code>search_datasets</code>,
+<code>dataset_search</code>, or <code>list_datasets</code>. It does not
+call MCP write tools or accept an MCP-provided filesystem path. Treat
+endpoint results as untrusted text and verify the provider reference
+before downloading.</p>
+</section>
+<section id="9-select-and-inspect-the-active-artifact" class="level3">
+<h3>9. Select and inspect the active artifact</h3>
+<p>After at least one successful import, <strong>Active context
+dataset</strong> controls the table used throughout the application. The
+preview shows:</p>
+<ul>
+<li>row count;</li>
+<li>column count;</li>
+<li>source (<code>upload</code>, <code>url</code>,
+<code>huggingface</code>, or <code>kaggle</code>);</li>
+<li>the first 100 rows.</li>
+</ul>
+<p>Changing the selection removes the prepared predictor, stored batch
+result, and stored single-row result. This prevents a model prepared on
+dataset A from being used accidentally with dataset B.</p>
+<section id="local-storage-map" class="level4">
+<h4>Local storage map</h4>
+<pre class="text"><code>data/
+├── .gitkeep
+├── cache/                   # model/runtime cache; gitignored
+├── downloads/
+│   ├── huggingface/         # copied Hub files; gitignored
+│   └── kaggle/              # unzipped provider datasets; gitignored
+├── sessions/                # reserved session data; gitignored
+└── uploads/                 # reserved uploaded data; gitignored</code></pre>
+<p>Local browser uploads remain in Streamlit session memory unless
+explicitly written by future code. Provider downloads are written under
+<code>data/downloads</code>. The <code>.gitignore</code> prevents those
+data files from entering version control.</p>
+</section>
+</section>
+<section id="10-context-rows-versus-test-rows" class="level3">
+<h3>10. Context rows versus test rows</h3>
+<p>The workbench supports two batch prediction patterns.</p>
+<p>This context/test distinction follows TabFM's official examples,
+where <code>X_train</code>/<code>y_train</code> provide in-context
+examples and <code>X_test</code> supplies new rows (<a
+href="https://github.com/google-research/tabfm/blob/cb6ba46b7ebc9a6581a81827e14e9c246202afb9/examples/classification_example.py">Google
+Research classification example</a>).</p>
+<section id="pattern-a--blank-targets-in-one-table" class="level4">
+<h4>Pattern A — blank targets in one table</h4>
+<pre class="text"><code>target present  ──→ labeled context
+target missing  ──→ batch test row</code></pre>
+<p>This is convenient for a single workbook or CSV. The Model &amp;
+Context tab uses all labeled rows for preparation. Batch Predictions
+later selects the blank-target rows.</p>
+</section>
+<section id="pattern-b--separate-test-file" class="level4">
+<h4>Pattern B — separate test file</h4>
+<p>Prepare context from the active labeled dataset, then upload another
+CSV, Parquet, or XLSX in the Batch Predictions tab. If the test file
+contains the target column, nonblank labels are used for metrics. The
+target is removed before inference. If it is absent, predictions run
+without metrics.</p>
+<div class="warning">
+<div class="title">
+<p>Warning</p>
+</div>
+<p>Do not include held-out labels in context and then report metrics on
+those same rows. That is leakage, not generalization measurement.</p>
+</div>
+</section>
+</section>
+<section id="11-schema-alignment-rules" class="level3">
+<h3>11. Schema alignment rules</h3>
+<p>The prepared context stores the ordered feature names. Prediction
+tables are aligned as follows:</p>
+<table>
+<thead>
+<tr>
+<th>Test schema condition</th>
+<th>Workbench behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Same names, different order</td>
+<td>Reorder to context order</td>
+</tr>
+<tr>
+<td>Missing context column</td>
+<td>Add the column filled with nulls and show a warning</td>
+</tr>
+<tr>
+<td>Extra test column</td>
+<td>Drop it and show a warning</td>
+</tr>
+<tr>
+<td>Duplicate test names</td>
+<td>Reject prediction</td>
+</tr>
+<tr>
+<td>No prediction rows</td>
+<td>Stop with an informational warning</td>
+</tr>
+</tbody>
+</table>
+<p>Filling a missing feature with null allows the upstream
+imputer/encoder to handle it, but it is not equivalent to having the
+original measurement. Treat the warning as a data-contract issue and
+investigate before trusting the result.</p>
+</section>
+<section id="12-data-validation-playbook" class="level3">
+<h3>12. Data validation playbook</h3>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Bad signal</th>
+<th>Corrective action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Does each row represent one prediction unit?</td>
+<td>Multiple event rows per entity without aggregation</td>
+<td>Define observation grain first</td>
+</tr>
+<tr>
+<td>Was every feature available at prediction time?</td>
+<td>Outcome or post-outcome fields</td>
+<td>Remove leakage columns</td>
+</tr>
+<tr>
+<td>Are labels representative?</td>
+<td>Only one class, severe temporal drift</td>
+<td>Rebuild context and held-out samples</td>
+</tr>
+<tr>
+<td>Are category values consistent?</td>
+<td><code>NY</code>, <code>New York</code>, <code>new_york</code></td>
+<td>Normalize before upload</td>
+</tr>
+<tr>
+<td>Are missing values meaningful?</td>
+<td>Sentinel strings mixed with nulls</td>
+<td>Standardize missing representation</td>
+</tr>
+<tr>
+<td>Are datetimes parseable?</td>
+<td>Mixed locale formats</td>
+<td>Normalize to ISO 8601</td>
+</tr>
+<tr>
+<td>Are identifiers predictive for the right reason?</td>
+<td>Unique customer/order IDs</td>
+<td>Remove unless semantically justified</td>
+</tr>
+<tr>
+<td>Is evaluation independent?</td>
+<td>Same rows in context and test</td>
+<td>Use a true holdout or time split</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="13-worked-ingestion-example" class="level3">
+<h3>13. Worked ingestion example</h3>
+<p>Create a small local classification table:</p>
+<pre class="csv"><code>age,plan,monthly_spend,joined_at,churned
+31,basic,29.0,2024-01-10,no
+47,pro,120.5,2022-08-03,yes
+36,pro,97.2,2023-04-11,no
+29,basic,18.5,2025-02-19,</code></pre>
+<p>Then:</p>
+<ol type="1">
+<li>save it as <code>churn.csv</code>;</li>
+<li>upload and parse it;</li>
+<li>select <code>churn.csv</code> as active;</li>
+<li>verify four rows and five columns;</li>
+<li>choose <code>churned</code> as the target in the next tab;</li>
+<li>confirm three labeled context rows and one blank-target prediction
+row.</li>
+</ol>
+<p>This tiny dataset demonstrates the flow, not model quality. Real
+evaluation needs representative context and held-out data.</p>
+</section>
+<section id="knowledge-check-1" class="level3">
+<h3>Knowledge check</h3>
+<ol type="1">
+<li>Why can a malformed workbook coexist with a valid CSV in the same
+upload action?</li>
+<li>Why does MCP discovery not write a dataset into the workspace?</li>
+<li>What happens if a separate test file omits a prepared feature?</li>
+<li>Why might a direct URL to a GitHub “blob” page fail while its
+raw-content URL works?</li>
+</ol>
+<p>Answers: files are parsed independently; MCP is intentionally
+discovery-only; the column is added as null with a warning; and a blob
+page returns HTML rather than table bytes.</p>
+</section>
+<section id="next-step-2" class="level3">
+<h3>Next step</h3>
+<p>Continue to <a href="04_tabfm_mastery.md">04 — TabFM Mastery</a> to
+prepare context, run classification or regression, evaluate metrics, and
+construct manual test cases.</p>
+</section>
+</section>
+<section id="tabfm-mastery" class="level2">
+<h2>04 — TabFM Mastery: Context, Prediction, and Evaluation</h2>
+<p><a href="03_data_handling.md">← Data Handling</a> · <a
+href="../../README.md#zero-to-master-tutorial">Tutorial index</a></p>
+<p>This chapter turns a validated table into classification or
+regression predictions. It explains what the UI does, how the underlying
+Python sequence maps to the official TabFM API, and how to decide
+whether the resulting metrics are trustworthy.</p>
+<div class="important">
+<div class="title">
+<p>Important</p>
+</div>
+<p>In this repository, <strong>Model &amp; Context</strong> replaces the
+misleading phrase “training/fine-tuning.” TabFM's pretrained weights
+remain frozen. <code>fit()</code> prepares transformations and labeled
+context; it does not perform gradient descent or update model parameters
+(<a
+href="https://github.com/google-research/tabfm/tree/cb6ba46b7ebc9a6581a81827e14e9c246202afb9#quick-start-tabfm-v100">official
+TabFM quick start</a>).</p>
+</div>
+<section id="1-prediction-lifecycle" class="level3">
+<h3>1. Prediction lifecycle</h3>
+<pre class="mermaid"><code>flowchart TD
+    A[Select active table] --&gt; B[Choose target]
+    B --&gt; C[Keep rows with nonblank target]
+    C --&gt; D[Suggest classification or regression]
+    D --&gt; E[User confirms or overrides task]
+    E --&gt; F[Fingerprint context values, schema, and task]
+    F --&gt; G[Load matching PyTorch checkpoint]
+    G --&gt; H[Construct 8-member sklearn wrapper]
+    H --&gt; I[fit: preprocessing + context preparation]
+    I --&gt; J{Prediction mode}
+    J --&gt;|Blank targets| K[Batch rows from active table]
+    J --&gt;|Separate file| L[External test rows]
+    J --&gt;|Manual form| M[One typed row]
+    K --&gt; N[Align feature schema]
+    L --&gt; N
+    M --&gt; N
+    N --&gt; O[predict / predict_proba]
+    O --&gt; P[Metrics when labels exist]
+    O --&gt; Q[Preview and CSV download]</code></pre>
+</section>
+<section id="2-choose-the-target-and-task" class="level3">
+<h3>2. Choose the target and task</h3>
+<p>Open <strong>Model &amp; Context</strong> after selecting a
+dataset.</p>
+<ol type="1">
+<li>Choose <strong>Target column</strong>.</li>
+<li>Read the suggested task and rationale.</li>
+<li>Confirm or override <strong>Task type</strong>.</li>
+<li>Check context-row, feature, and target-value counts.</li>
+<li>Select <strong>Load TabFM and prepare context</strong>.</li>
+</ol>
+<section id="task-suggestion-heuristic" class="level4">
+<h4>Task-suggestion heuristic</h4>
+<p>The helper examines nonblank targets:</p>
+<pre class="mermaid"><code>flowchart TD
+    A[Nonblank target values] --&gt; B{Numeric and not Boolean?}
+    B --&gt;|No| C[Suggest classification]
+    B --&gt;|Yes| D{Integer-like with 2–10 unique values?}
+    D --&gt;|Yes| C
+    D --&gt;|No| E[Suggest regression]</code></pre>
+<p>This is deliberately a suggestion. An integer code such as
+<code>1</code>, <code>2</code>, <code>3</code> can represent categories,
+while a small numeric target can still be continuous. Domain semantics
+override dtype heuristics.</p>
+<table>
+<thead>
+<tr>
+<th>Target example</th>
+<th>Suggested task</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>yes</code>, <code>no</code></td>
+<td>Classification</td>
+<td>Categorical values</td>
+</tr>
+<tr>
+<td><code>0</code>, <code>1</code></td>
+<td>Classification</td>
+<td>Two integer-like values</td>
+</tr>
+<tr>
+<td><code>1</code>, <code>2</code>, <code>3</code>, <code>4</code>,
+<code>5</code> as satisfaction bands</td>
+<td>Classification</td>
+<td>Small bounded category set</td>
+</tr>
+<tr>
+<td><code>1.2</code>, <code>2.8</code>, <code>4.1</code>,
+<code>5.9</code></td>
+<td>Regression</td>
+<td>Continuous-looking numeric values</td>
+</tr>
+<tr>
+<td>Sale price in whole dollars</td>
+<td>Regression</td>
+<td>Many numeric values despite integer storage</td>
+</tr>
+</tbody>
+</table>
+<div class="warning">
+<div class="title">
+<p>Warning</p>
+</div>
+<p>Choosing classification for an identifier-like integer column can
+create meaningless classes; choosing regression for category codes
+invents an ordering and distance that may not exist.</p>
+</div>
+</section>
+</section>
+<section id="3-context-requirements" class="level3">
+<h3>3. Context requirements</h3>
+<p>Before the upstream wrapper receives data,
+<code>PreparedPredictor.prepare()</code> enforces:</p>
+<table>
+<thead>
+<tr>
+<th>Contract</th>
+<th>Failure message/behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>At least two labeled rows</td>
+<td>Context preparation stops</td>
+</tr>
+<tr>
+<td>At least one feature</td>
+<td>Target-only table is rejected</td>
+</tr>
+<tr>
+<td>No more than 500 features</td>
+<td>Context preparation stops</td>
+</tr>
+<tr>
+<td>Unique feature names</td>
+<td>Duplicate schema is rejected</td>
+</tr>
+<tr>
+<td>No missing context targets</td>
+<td>Unlabeled rows stay outside context</td>
+</tr>
+<tr>
+<td>Classification has 2–10 classes</td>
+<td>Invalid class count is rejected</td>
+</tr>
+<tr>
+<td>Regression target is numeric</td>
+<td>Non-numeric labeled values are rejected</td>
+</tr>
+</tbody>
+</table>
+<p>The application fingerprints feature values, target values, dtypes,
+column order, and task. If any of them change, the prepared predictor
+and prior results become stale and are invalidated.</p>
+</section>
+<section id="4-exact-model-loading-sequence" class="level3">
+<h3>4. Exact model-loading sequence</h3>
+<p>The workbench follows the official PyTorch/scikit-learn API with
+local resource settings:</p>
+<pre class="python"><code>from tabfm import TabFMClassifier, TabFMRegressor, tabfm_v1_0_0_pytorch
+
+model = tabfm_v1_0_0_pytorch.load(
+    model_type=&quot;classification&quot;,  # or &quot;regression&quot;
+    device=&quot;cuda&quot;,                # or &quot;cpu&quot;
+)
+
+options = {
+    &quot;model&quot;: model,
+    &quot;n_estimators&quot;: 8,
+    &quot;batch_size&quot;: 1,
+    &quot;max_num_features&quot;: 500,
+    &quot;max_num_rows&quot;: 5000,
+    &quot;random_state&quot;: 42,
+    &quot;cache_context&quot;: True,
+    &quot;maybe_quantize_kv_cache&quot;: True,
+    &quot;keep_cache_on_device&quot;: False,
+}
+
+estimator = TabFMClassifier(**options)
+# For regression: TabFMRegressor(**options)
+
+estimator.fit(context_features, context_target)
+predictions = estimator.predict(test_features)
+probabilities = estimator.predict_proba(test_features)  # classification only</code></pre>
+<p>The actual app wraps this sequence in
+<code>load_tabfm_predictor()</code> and <code>PreparedPredictor</code>.
+The upstream loader defaults to bfloat16 compute, loads classification
+or regression weights from the corresponding Hugging Face subfolder,
+places the model in evaluation mode, and caches identical loads within
+the process (<a
+href="https://github.com/google-research/tabfm/blob/cb6ba46b7ebc9a6581a81827e14e9c246202afb9/tabfm/src/pytorch/tabfm_v1_0_0.py">official
+PyTorch loader</a>).</p>
+<section id="runtime-options" class="level4">
+<h4>Runtime options</h4>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th style="text-align: right;">Workbench value</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>n_estimators</code></td>
+<td style="text-align: right;">8</td>
+<td>Creates diverse preprocessing/context views</td>
+</tr>
+<tr>
+<td><code>batch_size</code></td>
+<td style="text-align: right;">1</td>
+<td>Limits simultaneous model inference batches</td>
+</tr>
+<tr>
+<td><code>max_num_features</code></td>
+<td style="text-align: right;">500</td>
+<td>Subsamples/caps features per member</td>
+</tr>
+<tr>
+<td><code>max_num_rows</code></td>
+<td style="text-align: right;">5,000</td>
+<td>Subsamples context per member</td>
+</tr>
+<tr>
+<td><code>random_state</code></td>
+<td style="text-align: right;">42</td>
+<td>Makes stochastic ensemble configuration repeatable</td>
+</tr>
+<tr>
+<td><code>cache_context</code></td>
+<td style="text-align: right;"><code>True</code></td>
+<td>Reuses encoded context/KV state for repeated predictions</td>
+</tr>
+<tr>
+<td><code>maybe_quantize_kv_cache</code></td>
+<td style="text-align: right;"><code>True</code></td>
+<td>Reduces cache memory when supported</td>
+</tr>
+<tr>
+<td><code>keep_cache_on_device</code></td>
+<td style="text-align: right;"><code>False</code></td>
+<td>Allows context cache offload from accelerator</td>
+</tr>
+</tbody>
+</table>
+<p>These are local engineering defaults, not architectural maxima for
+every possible upstream use. They trade some ensemble/context breadth
+for accessibility on an 8 GB-class GPU.</p>
+</section>
+</section>
+<section id="5-what-fit-actually-does" class="level3">
+<h3>5. What <code>fit()</code> actually does</h3>
+<p>For this ICL model, “fit” means <strong>prepare the prompt and
+preprocessing state</strong>.</p>
+<pre class="mermaid"><code>flowchart LR
+    A[Context DataFrame] --&gt; B[Detect numeric, categorical, datetime columns]
+    B --&gt; C[Impute and encode]
+    C --&gt; D[Remove constants and normalize ensemble views]
+    D --&gt; E[Permute/subsample rows and features]
+    E --&gt; F[Encode labeled context]
+    F --&gt; G[Cache reusable context state]
+    G --&gt; H[Ready for repeated test rows]</code></pre>
+<p>No optimizer, gradient tape, training epoch, learning rate, or
+checkpoint write appears in this workflow. The official model card
+states that examples are passed as context and predictions are made
+without fine-tuning or hyperparameter search (<a
+href="https://huggingface.co/google/tabfm-1.0.0-pytorch">model
+card</a>).</p>
+<section id="preprocessing-details" class="level4">
+<h4>Preprocessing details</h4>
+<table>
+<thead>
+<tr>
+<th>Data component</th>
+<th>Preparation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Numerical feature</td>
+<td>Coerce/validate, mean-impute, normalize, clip outliers</td>
+</tr>
+<tr>
+<td>Categorical feature</td>
+<td>Ordinal-encode; map unknown/missing categories to sentinel
+value</td>
+</tr>
+<tr>
+<td>Datetime feature</td>
+<td>Parse to UTC-compatible timestamps; add year/month/day/weekday</td>
+</tr>
+<tr>
+<td>Constant feature</td>
+<td>Remove from model input</td>
+</tr>
+<tr>
+<td>Classification target</td>
+<td>Validate labels and encode classes</td>
+</tr>
+<tr>
+<td>Regression target</td>
+<td>Convert numeric, normalize, then invert model output</td>
+</tr>
+<tr>
+<td>Ensemble member</td>
+<td>Apply its normalization, feature order, class shift, and row
+sample</td>
+</tr>
+</tbody>
+</table>
+<p>The pinned implementation is the source of truth (<a
+href="https://github.com/google-research/tabfm/blob/cb6ba46b7ebc9a6581a81827e14e9c246202afb9/tabfm/src/classifier_and_regressor.py">upstream
+wrapper source</a>). Avoid manually one-hot encoding every category
+unless an experiment specifically requires it; the wrapper is designed
+for mixed DataFrames.</p>
+</section>
+</section>
+<section id="6-classification-mastery" class="level3">
+<h3>6. Classification mastery</h3>
+<p>Classification returns a label and a probability for each learned
+class.</p>
+<p>For logits <span class="math inline">\(z_k\)</span> across <span
+class="math inline">\(K\)</span> classes, softmax gives</p>
+<p><span class="math display">\[
+p_k=\frac{e^{z_k}}{\sum_{j=1}^{K}e^{z_j}},
+\qquad \sum_{k=1}^{K}p_k=1.
+\]</span></p>
+<p>The predicted class is</p>
+<p><span class="math display">\[
+\hat{y}=\arg\max_k p_k.
+\]</span></p>
+<p>The workbench names probability columns from
+<code>classifier.classes_</code>, preserving numeric or string labels. A
+binary output might look like:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">age</th>
+<th>plan</th>
+<th>prediction</th>
+<th style="text-align: right;">probability_no</th>
+<th style="text-align: right;">probability_yes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">29</td>
+<td>basic</td>
+<td>no</td>
+<td style="text-align: right;">0.78</td>
+<td style="text-align: right;">0.22</td>
+</tr>
+</tbody>
+</table>
+<section id="classification-metrics" class="level4">
+<h4>Classification metrics</h4>
+<p><strong>Accuracy</strong> is the fraction of correct labeled
+predictions:</p>
+<p><span class="math display">\[
+\operatorname{Accuracy}=\frac{1}{N}\sum_{i=1}^{N}\mathbb{1}(\hat{y}_i=y_i).
+\]</span></p>
+<p><strong>Multiclass log loss</strong> evaluates probability
+quality:</p>
+<p><span class="math display">\[
+\operatorname{LogLoss}=-\frac{1}{N}\sum_{i=1}^{N}\sum_{k=1}^{K}
+\mathbb{1}(y_i=k)\log(p_{ik}).
+\]</span></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Better direction</th>
+<th>What it measures</th>
+<th>Common trap</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Accuracy</td>
+<td>Higher</td>
+<td>Top-label correctness</td>
+<td>Can hide minority-class failure</td>
+</tr>
+<tr>
+<td>Log loss</td>
+<td>Lower</td>
+<td>Probability calibration and confident mistakes</td>
+<td>Sensitive to near-zero probability on true class</td>
+</tr>
+<tr>
+<td>Evaluated rows</td>
+<td>Context only</td>
+<td>Number of nonblank held-out labels</td>
+<td>Small counts make metrics unstable</td>
+</tr>
+</tbody>
+</table>
+<p>Log loss is reported only when probability classes and evaluation
+labels are compatible. For imbalanced or high-stakes classification,
+export predictions and compute class-specific recall, precision,
+confusion matrices, and calibration diagnostics outside this minimal
+workbench.</p>
+</section>
+</section>
+<section id="7-regression-mastery" class="level3">
+<h3>7. Regression mastery</h3>
+<p>Regression returns one continuous prediction <span
+class="math inline">\(\hat{y}_i\)</span> per test row.</p>
+<section id="mean-absolute-error" class="level4">
+<h4>Mean absolute error</h4>
+<p><span class="math display">\[
+\operatorname{MAE}=\frac{1}{N}\sum_{i=1}^{N}|y_i-\hat{y}_i|.
+\]</span></p>
+<p>MAE is measured in target units and weights each absolute error
+linearly.</p>
+</section>
+<section id="root-mean-squared-error" class="level4">
+<h4>Root mean squared error</h4>
+<p><span class="math display">\[
+\operatorname{RMSE}=\sqrt{\frac{1}{N}\sum_{i=1}^{N}(y_i-\hat{y}_i)^2}.
+\]</span></p>
+<p>RMSE emphasizes large errors because residuals are squared.</p>
+</section>
+<section id="coefficient-of-determination" class="level4">
+<h4>Coefficient of determination</h4>
+<p><span class="math display">\[
+R^2=1-\frac{\sum_i(y_i-\hat{y}_i)^2}{\sum_i(y_i-\bar{y})^2}.
+\]</span></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Better direction</th>
+<th>Interpretation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MAE</td>
+<td>Lower</td>
+<td>Typical absolute error in original units</td>
+</tr>
+<tr>
+<td>RMSE</td>
+<td>Lower</td>
+<td>Error with stronger penalty for large misses</td>
+</tr>
+<tr>
+<td>R²</td>
+<td>Higher</td>
+<td>Improvement over predicting the held-out mean</td>
+</tr>
+</tbody>
+</table>
+<p>R² can be negative when predictions are worse than the mean baseline.
+It is omitted for fewer than two valid labeled rows because variance
+comparison is not meaningful. MAE/RMSE depend on target scale, so
+compare them with a naive baseline and domain tolerance.</p>
+</section>
+</section>
+<section id="8-batch-prediction-blank-targets" class="level3">
+<h3>8. Batch prediction: blank targets</h3>
+<p>Use this mode when context and test rows share one table.</p>
+<ol type="1">
+<li>Prepare context in <strong>Model &amp; Context</strong>.</li>
+<li>Open <strong>Batch Predictions</strong>.</li>
+<li>Select <strong>Blank targets in context dataset</strong>.</li>
+<li>Confirm the prediction-row count.</li>
+<li>Select <strong>Run batch prediction</strong>.</li>
+<li>Inspect schema warnings, device, latency, output, and
+probabilities.</li>
+<li>Select <strong>Download predictions</strong>.</li>
+</ol>
+<p>Rows with nonblank targets prepared the model. Rows with blank
+targets are selected, the target is removed, and remaining features are
+aligned to the context schema. No metrics appear because the test rows
+have no labels.</p>
+<div class="tip">
+<div class="title">
+<p>Tip</p>
+</div>
+<p>Preserve a stable row identifier in exported predictions only when it
+is needed for joining and cannot leak the target. TabFM will otherwise
+treat it as a feature.</p>
+</div>
+</section>
+<section id="9-batch-prediction-separate-test-file" class="level3">
+<h3>9. Batch prediction: separate test file</h3>
+<ol type="1">
+<li>Select <strong>Separate test file</strong>.</li>
+<li>Upload a CSV, Parquet, or XLSX table.</li>
+<li>If evaluation is desired, include the target column with held-out
+labels.</li>
+<li>Select <strong>Run batch prediction</strong>.</li>
+<li>Inspect metrics and download the result.</li>
+</ol>
+<pre class="mermaid"><code>flowchart TD
+    A[Test table] --&gt; B{Contains prepared target column?}
+    B --&gt;|No| C[Features only]
+    B --&gt;|Yes| D[Save target as expected labels]
+    D --&gt; E[Drop target from features]
+    C --&gt; F[Align context schema]
+    E --&gt; F
+    F --&gt; G[Predict]
+    G --&gt; H{Any nonblank expected labels?}
+    H --&gt;|No| I[Predictions without metrics]
+    H --&gt;|Yes| J[Metrics on labeled rows only]</code></pre>
+<p>Partially labeled test files are supported.
+<code>evaluated_rows</code> reports how many aligned test rows had
+usable labels. Predictions are still produced for all rows.</p>
+<section id="prevent-evaluation-leakage" class="level4">
+<h4>Prevent evaluation leakage</h4>
+<table>
+<thead>
+<tr>
+<th>Leakage pattern</th>
+<th>Why invalid</th>
+<th>Correct design</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Same rows in context and test</td>
+<td>Model has seen their labels in context</td>
+<td>Hold out rows before context preparation</td>
+</tr>
+<tr>
+<td>Random split on temporal outcomes</td>
+<td>Future information can enter past context</td>
+<td>Use time-ordered context/test split</td>
+</tr>
+<tr>
+<td>Feature calculated after outcome</td>
+<td>Direct proxy for label</td>
+<td>Restrict to prediction-time fields</td>
+</tr>
+<tr>
+<td>Preprocessing fitted on full target-aware dataset</td>
+<td>Test distribution informs context</td>
+<td>Fit any custom preprocessing on context only</td>
+</tr>
+<tr>
+<td>Selecting model after repeatedly viewing test metric</td>
+<td>Test becomes tuning set</td>
+<td>Keep a final untouched evaluation set</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="10-schema-mismatch-behavior" class="level3">
+<h3>10. Schema mismatch behavior</h3>
+<p>Prediction features are aligned to the exact prepared column
+order.</p>
+<pre class="text"><code>Context columns: [age, plan, monthly_spend]
+Test columns:    [plan, age, campaign]
+
+Aligned input:   [age, plan, monthly_spend]
+                              └─ filled with null
+campaign ──────────────────────── ignored with warning</code></pre>
+<p>This permissive alignment keeps exploratory prediction moving, but
+warnings indicate data drift. A missing column filled with null is not a
+neutral value; it flows through imputation/encoding and can shift
+predictions. Production systems would normally enforce a stricter schema
+contract, but production use of these weights is prohibited in any
+case.</p>
+</section>
+<section id="11-construct-a-manual-single-test-case" class="level3">
+<h3>11. Construct a manual single test case</h3>
+<p>Open <strong>Single Test Case</strong> after context preparation. The
+form is derived from context feature dtypes:</p>
+<table>
+<thead>
+<tr>
+<th>Context dtype/shape</th>
+<th>Widget</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Boolean</td>
+<td>Select box</td>
+<td><code>False</code>/<code>True</code> choice</td>
+</tr>
+<tr>
+<td>Numeric</td>
+<td>Number input</td>
+<td>Context median or <code>0.0</code></td>
+</tr>
+<tr>
+<td>Datetime</td>
+<td>Date input</td>
+<td>First nonblank context date or today</td>
+</tr>
+<tr>
+<td>Categorical with ≤50 unique values</td>
+<td>Select box</td>
+<td>Known categories</td>
+</tr>
+<tr>
+<td>Text/high-cardinality object</td>
+<td>Text input</td>
+<td>First nonblank context value or empty</td>
+</tr>
+</tbody>
+</table>
+<ol type="1">
+<li>Enter a value for every feature.</li>
+<li>Select <strong>Predict single case</strong>.</li>
+<li>Inspect the predicted label/value and class probabilities.</li>
+<li>Compare with domain expectations and nearby examples.</li>
+</ol>
+<section id="manual-validation-pattern" class="level4">
+<h4>Manual validation pattern</h4>
+<p>Build three kinds of cases:</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Purpose</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Typical</td>
+<td>Confirm ordinary behavior</td>
+<td>Median numeric values and common categories</td>
+</tr>
+<tr>
+<td>Boundary</td>
+<td>Exercise known limits</td>
+<td>Minimum/maximum plausible value</td>
+</tr>
+<tr>
+<td>Counterfactual</td>
+<td>Probe one feature's influence</td>
+<td>Same row with only <code>plan</code> changed</td>
+</tr>
+</tbody>
+</table>
+<p>Manual cases are diagnostics, not a substitute for held-out metrics.
+A plausible prediction on one row does not establish calibration,
+fairness, or generalization.</p>
+</section>
+</section>
+<section id="12-read-the-result-panel" class="level3">
+<h3>12. Read the result panel</h3>
+<p>Every result can contain:</p>
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Alignment warnings</td>
+<td>Missing columns filled or extra columns ignored</td>
+</tr>
+<tr>
+<td>Metrics</td>
+<td>Calculated only from available held-out labels</td>
+</tr>
+<tr>
+<td>Device</td>
+<td><code>cuda</code> or <code>cpu</code> selected at model load</td>
+</tr>
+<tr>
+<td>Inference latency</td>
+<td>Time spent in estimator prediction calls, not upload/model-load
+time</td>
+</tr>
+<tr>
+<td>Prediction column</td>
+<td>Final class label or continuous value</td>
+</tr>
+<tr>
+<td>Probability columns</td>
+<td>Classification probability per <code>classes_</code> label</td>
+</tr>
+<tr>
+<td>CSV download</td>
+<td>Submitted feature rows plus predictions/probabilities</td>
+</tr>
+</tbody>
+</table>
+<p>Latency is measured per action after context preparation. First-call
+warm-up, checkpoint loading, browser rendering, and provider downloads
+are outside that number.</p>
+</section>
+<section id="13-failure-modes-and-recovery" class="level3">
+<h3>13. Failure modes and recovery</h3>
+<table>
+<thead>
+<tr>
+<th>Failure</th>
+<th>Cause</th>
+<th>Recovery</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>“Prepare a model context first”</td>
+<td>No current prepared signature</td>
+<td>Return to Model &amp; Context and prepare</td>
+</tr>
+<tr>
+<td>License warning blocks button</td>
+<td>Acknowledgement is false</td>
+<td>Review license, set variable, restart app</td>
+</tr>
+<tr>
+<td>Classification requires 2–10 classes</td>
+<td>One or &gt;10 labeled classes</td>
+<td>Correct target/task or use another model</td>
+</tr>
+<tr>
+<td>Regression target must be numeric</td>
+<td>Text or malformed numbers</td>
+<td>Clean target and reload</td>
+</tr>
+<tr>
+<td>More than 500 features</td>
+<td>Wide schema</td>
+<td>Remove noise/leakage or reduce dimensions before upload</td>
+</tr>
+<tr>
+<td>CUDA out of memory</td>
+<td>Context/test/ensemble too large</td>
+<td>Restart, reduce rows/features/test batch, or use larger GPU</td>
+</tr>
+<tr>
+<td>CPU appears hung</td>
+<td>Transformer inference is slow</td>
+<td>Start with tiny data; use compatible CUDA when possible</td>
+</tr>
+<tr>
+<td>Missing-column warning</td>
+<td>Test schema drift</td>
+<td>Restore feature or verify imputation is acceptable</td>
+</tr>
+<tr>
+<td>Extra-column warning</td>
+<td>Context lacks a test feature</td>
+<td>Reprepare with intended schema or remove the extra field</td>
+</tr>
+<tr>
+<td>Metrics absent</td>
+<td>No usable labels or incompatible probability classes</td>
+<td>Include aligned held-out target labels</td>
+</tr>
+<tr>
+<td>Old result after input edit</td>
+<td>Streamlit state or prepared signature mismatch</td>
+<td>Reprepare context and rerun prediction</td>
+</tr>
+</tbody>
+</table>
+<p>Use <strong>Clear session</strong> in the sidebar to remove loaded
+artifacts, prepared models, and prediction state. It does not delete
+provider files already written under <code>data/downloads</code> or the
+shared model cache.</p>
+</section>
+<section id="14-memory-and-performance-tuning" class="level3">
+<h3>14. Memory and performance tuning</h3>
+<p>Approximate inference cost grows with context rows <span
+class="math inline">\(n\)</span>, test rows <span
+class="math inline">\(t\)</span>, model width <span
+class="math inline">\(d\)</span>, and ensemble members <span
+class="math inline">\(M\)</span>. Exact complexity depends on TabFM's
+compressed attention/cache path, but these levers remain practical:</p>
+<table>
+<thead>
+<tr>
+<th>Lever</th>
+<th>Lower-resource setting</th>
+<th>Tradeoff</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Context rows</td>
+<td>Smaller representative subset</td>
+<td>May lose rare patterns</td>
+</tr>
+<tr>
+<td>Features</td>
+<td>Remove leakage, IDs, constants, redundant fields</td>
+<td>Poor selection can remove signal</td>
+</tr>
+<tr>
+<td>Test rows per action</td>
+<td>Smaller files/batches</td>
+<td>More user actions and output joins</td>
+</tr>
+<tr>
+<td>Ensemble members</td>
+<td>Fixed at 8 in this app</td>
+<td>Code change required; fewer views may reduce robustness</td>
+</tr>
+<tr>
+<td>Device</td>
+<td>CUDA</td>
+<td>Requires compatible NVIDIA hardware and driver</td>
+</tr>
+<tr>
+<td>Context cache</td>
+<td>Enabled with possible quantization/offload</td>
+<td>Optimizes repeated predictions after preparation</td>
+</tr>
+</tbody>
+</table>
+<p>The app logs task, test-row count, feature count, latency, and device
+at the prediction boundary. It does not log raw tables, labels,
+predictions, or credentials.</p>
+</section>
+<section id="15-fine-tuning-current-boundary-and-future-note"
+class="level3">
+<h3>15. Fine-tuning: current boundary and future note</h3>
+<section id="supported-today" class="level4">
+<h4>Supported today</h4>
+<ul>
+<li>frozen TabFM v1.0.0 classification/regression weights;</li>
+<li>wrapper preprocessing and in-context adaptation;</li>
+<li>deterministic ensemble inference;</li>
+<li>repeated batch and single-row prediction against cached
+context.</li>
+</ul>
+</section>
+<section id="not-supported-today" class="level4">
+<h4>Not supported today</h4>
+<ul>
+<li>gradient-based updates to TabFM weights;</li>
+<li>adapters, LoRA, or partial-layer tuning;</li>
+<li>optimizer/epoch/loss configuration;</li>
+<li>saving a dataset-specialized checkpoint;</li>
+<li>distributing a derivative model.</li>
+</ul>
+<p>The model card lists tasks requiring task-specific fine-tuning as not
+intended (<a
+href="https://huggingface.co/google/tabfm-1.0.0-pytorch">official
+limitations</a>). The weight license also defines customized,
+fine-tuned, or retrained versions as derivatives and restricts
+use/distribution (<a
+href="https://huggingface.co/google/tabfm-1.0.0-pytorch/blob/main/LICENSE">official
+weight license</a>).</p>
+</section>
+<section id="what-a-future-research-proposal-would-need" class="level4">
+<h4>What a future research proposal would need</h4>
+<p>A future upstream-supported fine-tuning path would require, at
+minimum:</p>
+<ol type="1">
+<li>explicit legal permission for the intended derivative and use;</li>
+<li>an official trainable checkpoint/API rather than inference-only
+assumptions;</li>
+<li>leakage-safe train/validation/test splits and a task-specific
+loss;</li>
+<li>optimizer, precision, memory, checkpoint, and reproducibility
+design;</li>
+<li>catastrophic-forgetting and calibration evaluation against frozen
+ICL;</li>
+<li>derivative-model storage and distribution controls.</li>
+</ol>
+<p>This is an architectural roadmap, not an executable workflow. Do not
+reinterpret <code>fit()</code> as fine-tuning or add unsupported
+training commands to this repository.</p>
+</section>
+</section>
+<section id="16-evaluation-protocol-for-credible-results"
+class="level3">
+<h3>16. Evaluation protocol for credible results</h3>
+<pre class="mermaid"><code>flowchart LR
+    A[Raw labeled data] --&gt; B[Freeze independent test split]
+    B --&gt; C[Select context from remaining data]
+    C --&gt; D[Prepare TabFM once]
+    D --&gt; E[Predict frozen test split]
+    E --&gt; F[Compute declared primary metric]
+    F --&gt; G[Compare baseline under same split]
+    G --&gt; H[Report uncertainty, latency, memory, and license]</code></pre>
+<p>Use this checklist:</p>
+<table>
+<thead>
+<tr>
+<th>Decision</th>
+<th>Record before evaluation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prediction unit</td>
+<td>What one row represents</td>
+</tr>
+<tr>
+<td>Split method</td>
+<td>Random, grouped, or temporal—and why</td>
+</tr>
+<tr>
+<td>Primary metric</td>
+<td>Metric aligned with business/research cost</td>
+</tr>
+<tr>
+<td>Context size</td>
+<td>Number of labeled rows shown to TabFM</td>
+</tr>
+<tr>
+<td>Baseline</td>
+<td>Naive predictor and/or tuned GBDT</td>
+</tr>
+<tr>
+<td>Random seed</td>
+<td>Split and baseline seeds</td>
+</tr>
+<tr>
+<td>Hardware</td>
+<td>CPU/GPU and memory</td>
+</tr>
+<tr>
+<td>TabFM configuration</td>
+<td>Task, ensemble count, row/feature caps</td>
+</tr>
+<tr>
+<td>Exclusions</td>
+<td>Leakage fields and removed identifiers</td>
+</tr>
+<tr>
+<td>License scope</td>
+<td>Research/evaluation purpose only</td>
+</tr>
+</tbody>
+</table>
+<p>For small held-out sets, use confidence intervals or repeated splits
+where appropriate. Do not claim superiority from one convenient
+split.</p>
+</section>
+<section id="17-worked-classification-walkthrough" class="level3">
+<h3>17. Worked classification walkthrough</h3>
+<p>Using the <code>churn.csv</code> example from Chapter 3:</p>
+<ol type="1">
+<li>choose <code>churned</code> as target;</li>
+<li>accept classification because labels are
+<code>yes</code>/<code>no</code>;</li>
+<li>confirm three labeled context rows and four features;</li>
+<li>prepare the classification checkpoint;</li>
+<li>select blank-target batch mode;</li>
+<li>predict the fourth row;</li>
+<li>inspect <code>prediction</code>, <code>probability_no</code>, and
+<code>probability_yes</code>;</li>
+<li>export CSV.</li>
+</ol>
+<p>With only three context rows, the result validates integration—not
+quality. A serious experiment needs enough representative context and
+independently labeled test rows.</p>
+</section>
+<section id="18-worked-regression-walkthrough" class="level3">
+<h3>18. Worked regression walkthrough</h3>
+<p>Suppose a house-price table contains <code>square_feet</code>,
+<code>neighborhood</code>, <code>age_years</code>, and
+<code>sale_price</code>:</p>
+<ol type="1">
+<li>choose <code>sale_price</code> as target;</li>
+<li>confirm or override to regression;</li>
+<li>ensure every context price is numeric;</li>
+<li>prepare the regression checkpoint;</li>
+<li>upload a separate labeled test table;</li>
+<li>run batch prediction;</li>
+<li>interpret MAE and RMSE in currency units and R² against the held-out
+mean;</li>
+<li>compare with a mean baseline and a GBDT on the identical split.</li>
+</ol>
+<p>If RMSE is much larger than MAE, a small number of large misses may
+dominate. Inspect those rows before drawing conclusions.</p>
+</section>
+<section id="19-mastery-checklist" class="level3">
+<h3>19. Mastery checklist</h3>
+<p>You are ready to use the workbench responsibly when you can answer
+“yes” to each statement:</p>
+<ul>
+<li>I can explain why TabFM <code>fit()</code> does not update
+weights.</li>
+<li>I selected classification/regression from target semantics, not
+dtype alone.</li>
+<li>My context and held-out test rows do not overlap.</li>
+<li>Every test feature was available at real prediction time.</li>
+<li>I investigated every missing/extra-column warning.</li>
+<li>I compare metrics with a baseline and understand their scale.</li>
+<li>I recorded context size, configuration, device, and latency.</li>
+<li>My use is non-commercial, non-production, and permitted by the
+weight license.</li>
+</ul>
+</section>
+<section id="references-1" class="level3">
+<h3>References</h3>
+<ul>
+<li><a
+href="https://github.com/google-research/tabfm/tree/cb6ba46b7ebc9a6581a81827e14e9c246202afb9#quick-start-tabfm-v100">Official
+TabFM repository and quick start</a></li>
+<li><a href="https://huggingface.co/google/tabfm-1.0.0-pytorch">Official
+PyTorch model card</a></li>
+<li><a
+href="https://github.com/google-research/tabfm/blob/cb6ba46b7ebc9a6581a81827e14e9c246202afb9/tabfm/src/pytorch/tabfm_v1_0_0.py">Official
+PyTorch loader implementation</a></li>
+<li><a
+href="https://github.com/google-research/tabfm/blob/cb6ba46b7ebc9a6581a81827e14e9c246202afb9/tabfm/src/classifier_and_regressor.py">Official
+classifier/regressor wrapper source</a></li>
+<li><a
+href="https://huggingface.co/google/tabfm-1.0.0-pytorch/blob/main/LICENSE">TabFM
+Non-Commercial License v1.0</a></li>
+<li><a
+href="https://scikit-learn.org/stable/modules/model_evaluation.html">Scikit-learn
+model evaluation guide</a></li>
+</ul>
+</section>
+</section>
+      </article>
+
+      <footer class="site-footer">
+        <p>TabFM Local Research Workbench · Apache-2.0 documentation · pretrained weights licensed separately.</p>
+        <p><a href="#top">Back to top ↑</a></p>
+      </footer>
+    </main>
+  </div>
+
+  <dialog id="mobile-nav" aria-labelledby="mobile-nav-title">
+    <div class="dialog-inner">
+      <div class="dialog-header"><strong id="mobile-nav-title">Tutorial map</strong><button class="icon-button" id="mobile-nav-close" type="button" aria-label="Close tutorial navigation">×</button></div>
+      <div class="search-box">
+        <label class="sr-only" for="heading-search-mobile">Search tutorial headings</label>
+        <input id="heading-search-mobile" type="search" placeholder="Search headings…" autocomplete="off" aria-controls="search-results-mobile" aria-expanded="false">
+      </div>
+      <ul class="search-results" id="search-results-mobile" role="listbox" aria-label="Matching tutorial headings"></ul>
+      <nav class="chapter-nav" aria-label="Mobile chapters"><ol><li><a href="#introduction"><span>01</span><span>Foundations</span></a></li><li><a href="#installation"><span>02</span><span>Installation</span></a></li><li><a href="#data-handling"><span>03</span><span>Data handling</span></a></li><li><a href="#tabfm-mastery"><span>04</span><span>TabFM mastery</span></a></li></ol></nav>
+    </div>
+  </dialog>
+  <div class="sr-only" id="interaction-status" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      document.addEventListener("DOMContentLoaded", function () {
+
+      var root = document.documentElement;
+      var status = document.getElementById("interaction-status");
+      var themeButton = document.getElementById("theme-toggle");
+      var themeColor = document.getElementById("theme-color");
+      var lightHighlight = document.getElementById("hljs-light");
+      var darkHighlight = document.getElementById("hljs-dark");
+      var diagrams = [];
+
+      function announce(message) {
+        status.textContent = "";
+        requestAnimationFrame(function () { status.textContent = message; });
+      }
+
+      function currentTheme() {
+        return root.dataset.theme === "dark" ? "dark" : "light";
+      }
+
+      function applyTheme(theme, persist) {
+        root.dataset.theme = theme;
+        themeButton.setAttribute("aria-pressed", String(theme === "dark"));
+        themeButton.setAttribute("aria-label", "Switch to " + (theme === "dark" ? "light" : "dark") + " theme");
+        themeColor.setAttribute("content", theme === "dark" ? "#0b1216" : "#f4f7f6");
+        lightHighlight.media = theme === "dark" ? "not all" : "all";
+        darkHighlight.media = theme === "dark" ? "all" : "not all";
+        if (persist) {
+          try { localStorage.setItem("tabfm-tutorial-theme", theme); } catch (_error) { /* Storage is optional. */ }
+        }
+        renderDiagrams();
+      }
+
+      themeButton.addEventListener("click", function () {
+        var nextTheme = currentTheme() === "dark" ? "light" : "dark";
+        applyTheme(nextTheme, true);
+        announce(nextTheme.charAt(0).toUpperCase() + nextTheme.slice(1) + " theme enabled");
+      });
+
+      function prepareAdmonitions() {
+        document.querySelectorAll("#tutorial-content div.warning, #tutorial-content div.important, #tutorial-content div.tip, #tutorial-content div.caution, #tutorial-content div.note").forEach(function (box) {
+          var kind = ["warning", "important", "tip", "caution", "note"].find(function (name) { return box.classList.contains(name); });
+          box.classList.add("admonition");
+          box.dataset.kind = kind.toUpperCase();
+          var title = box.querySelector(":scope > .title");
+          if (title) title.remove();
+        });
+        document.querySelectorAll("#tutorial-content blockquote").forEach(function (quote) {
+          var firstParagraph = quote.querySelector(":scope > p:first-child");
+          if (!firstParagraph) return;
+          var match = firstParagraph.textContent.match(/^\[!(IMPORTANT|WARNING|TIP|CAUTION|NOTE)\]\s*/);
+          if (!match) return;
+          var walker = document.createTreeWalker(firstParagraph, NodeFilter.SHOW_TEXT);
+          var node = walker.nextNode();
+          if (node) node.nodeValue = node.nodeValue.replace(/^\[![A-Z]+\]\s*/, "");
+          quote.classList.add("admonition");
+          quote.dataset.kind = match[1];
+        });
+      }
+
+      function prepareLinks() {
+        var chapterLinks = {
+          "01_introduction.md": "#introduction",
+          "02_installation.md": "#installation",
+          "03_data_handling.md": "#data-handling",
+          "04_tabfm_mastery.md": "#tabfm-mastery",
+          "../../README.md#zero-to-master-tutorial": "#top"
+        };
+        document.querySelectorAll("#tutorial-content a[href]").forEach(function (link) {
+          var href = link.getAttribute("href");
+          if (chapterLinks[href]) link.setAttribute("href", chapterLinks[href]);
+        });
+      }
+
+      function prepareTables() {
+        document.querySelectorAll("#tutorial-content table").forEach(function (table) {
+          var wrapper = document.createElement("div");
+          wrapper.className = "table-shell";
+          wrapper.tabIndex = 0;
+          wrapper.setAttribute("role", "region");
+          var heading = table.closest("section") && table.closest("section").querySelector("h3, h4, h5, h6");
+          wrapper.setAttribute("aria-label", (heading ? heading.textContent : "Tutorial data") + " table");
+          table.parentNode.insertBefore(wrapper, table);
+          wrapper.appendChild(table);
+          table.querySelectorAll("thead th").forEach(function (cell) { cell.setAttribute("scope", "col"); });
+        });
+      }
+
+      function codeLanguage(code) {
+        var knownLanguages = ["powershell", "bash", "python", "json", "dotenv", "csv", "text", "mermaid"];
+        var declaredLanguage = Array.from(code.parentElement.classList).find(function (name) { return knownLanguages.includes(name); });
+        if (declaredLanguage) return declaredLanguage;
+        var languageClass = Array.from(code.classList).find(function (name) { return name.indexOf("language-") === 0; });
+        return languageClass ? languageClass.replace("language-", "") : "text";
+      }
+
+      function prepareCode() {
+        document.querySelectorAll("#tutorial-content pre > code").forEach(function (code, codeIndex) {
+          var pre = code.parentElement;
+          if (pre.classList.contains("mermaid") || code.classList.contains("language-mermaid")) {
+            pre.classList.add("mermaid");
+            pre.dataset.source = code.textContent;
+            pre.textContent = code.textContent;
+            diagrams.push(pre);
+            return;
+          }
+          var frame = pre.parentElement.classList.contains("sourceCode") ? pre.parentElement : document.createElement("div");
+          if (!frame.parentElement) {
+            pre.parentNode.insertBefore(frame, pre);
+            frame.appendChild(pre);
+          }
+          frame.classList.add("code-frame");
+          var toolbar = document.createElement("div");
+          toolbar.className = "code-toolbar";
+          var language = codeLanguage(code);
+          if (language !== "text" && language !== "dotenv") code.classList.add("language-" + language);
+          var label = document.createElement("span");
+          label.textContent = language;
+          var button = document.createElement("button");
+          button.type = "button";
+          button.id = "copy-code-" + (codeIndex + 1);
+          button.className = "copy-button";
+          button.textContent = "Copy";
+          button.setAttribute("aria-label", "Copy " + language + " code");
+          button.addEventListener("click", async function () {
+            try {
+              await navigator.clipboard.writeText(code.textContent);
+              button.textContent = "Copied";
+              announce("Code copied to clipboard");
+              setTimeout(function () { button.textContent = "Copy"; }, 1600);
+            } catch (_error) {
+              var selection = window.getSelection();
+              var range = document.createRange();
+              range.selectNodeContents(code);
+              selection.removeAllRanges();
+              selection.addRange(range);
+              button.textContent = "Selected";
+              announce("Clipboard permission unavailable. Code selected; press Control C to copy.");
+            }
+          });
+          toolbar.append(label, button);
+          frame.insertBefore(toolbar, pre);
+          if (window.hljs) window.hljs.highlightElement(code);
+        });
+      }
+
+      async function renderDiagrams() {
+        if (!window.tabfmMermaid || !diagrams.length) return;
+        window.tabfmMermaid.initialize({
+          startOnLoad: false,
+          securityLevel: "strict",
+          theme: currentTheme() === "dark" ? "dark" : "neutral",
+          fontFamily: "Aptos, Segoe UI, sans-serif",
+          flowchart: { htmlLabels: false, curve: "basis" }
+        });
+        diagrams.forEach(function (diagram) {
+          diagram.removeAttribute("data-processed");
+          diagram.textContent = diagram.dataset.source;
+        });
+        try {
+          await window.tabfmMermaid.run({ nodes: diagrams });
+        } catch (_error) {
+          diagrams.forEach(function (diagram) {
+            if (!diagram.querySelector("svg")) diagram.textContent = "Diagram source:\n" + diagram.dataset.source;
+          });
+        }
+      }
+
+      window.addEventListener("tabfm-mermaid-ready", renderDiagrams);
+
+      function prepareMath() {
+        if (!window.renderMathInElement) return;
+        window.renderMathInElement(document.getElementById("tutorial-content"), {
+          delimiters: [
+            { left: "\\[", right: "\\]", display: true },
+            { left: "\\(", right: "\\)", display: false }
+          ],
+          ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
+          throwOnError: false
+        });
+      }
+
+      function setupSearch(inputId, resultsId) {
+        var input = document.getElementById(inputId);
+        var results = document.getElementById(resultsId);
+        var headings = Array.from(document.querySelectorAll("#tutorial-content h2, #tutorial-content h3, #tutorial-content h4"));
+        var visibleResults = [];
+        var selectedIndex = -1;
+
+        function closeResults() {
+          results.dataset.open = "false";
+          input.setAttribute("aria-expanded", "false");
+          selectedIndex = -1;
+        }
+
+        function selectResult(index) {
+          selectedIndex = index;
+          visibleResults.forEach(function (button, buttonIndex) {
+            button.setAttribute("aria-selected", String(buttonIndex === selectedIndex));
+          });
+          if (visibleResults[selectedIndex]) visibleResults[selectedIndex].scrollIntoView({ block: "nearest" });
+        }
+
+        function updateResults() {
+          var query = input.value.trim().toLocaleLowerCase();
+          results.replaceChildren();
+          visibleResults = [];
+          selectedIndex = -1;
+          if (!query) { closeResults(); return; }
+          headings.filter(function (heading) {
+            return heading.textContent.toLocaleLowerCase().includes(query);
+          }).slice(0, 12).forEach(function (heading) {
+            var item = document.createElement("li");
+            var button = document.createElement("button");
+            button.type = "button";
+            button.className = "search-result";
+            button.setAttribute("role", "option");
+            button.setAttribute("aria-selected", "false");
+            var title = document.createElement("span");
+            title.textContent = heading.textContent;
+            var chapter = document.createElement("small");
+            var chapterHeading = heading.closest("section.level2") && heading.closest("section.level2").querySelector(":scope > h2");
+            chapter.textContent = chapterHeading ? chapterHeading.textContent : "Tutorial";
+            button.append(title, chapter);
+            button.addEventListener("click", function () {
+              var headingSection = heading.closest("section[id]");
+              var targetId = heading.id || (headingSection ? headingSection.id : "top");
+              heading.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+              history.replaceState(null, "", "#" + targetId);
+              input.value = "";
+              closeResults();
+              heading.setAttribute("tabindex", "-1");
+              heading.focus({ preventScroll: true });
+              if (document.getElementById("mobile-nav").open) document.getElementById("mobile-nav").close();
+            });
+            item.appendChild(button);
+            results.appendChild(item);
+            visibleResults.push(button);
+          });
+          results.dataset.open = "true";
+          input.setAttribute("aria-expanded", "true");
+          if (!visibleResults.length) {
+            var empty = document.createElement("li");
+            empty.textContent = "No matching headings";
+            empty.className = "search-result";
+            results.appendChild(empty);
+          }
+        }
+
+        input.addEventListener("input", updateResults);
+        input.addEventListener("keydown", function (event) {
+          if (event.key === "ArrowDown" && visibleResults.length) { event.preventDefault(); selectResult((selectedIndex + 1) % visibleResults.length); }
+          if (event.key === "ArrowUp" && visibleResults.length) { event.preventDefault(); selectResult((selectedIndex - 1 + visibleResults.length) % visibleResults.length); }
+          if (event.key === "Enter" && selectedIndex >= 0) { event.preventDefault(); visibleResults[selectedIndex].click(); }
+          if (event.key === "Escape") { input.value = ""; closeResults(); }
+        });
+        return input;
+      }
+
+      var desktopSearch = setupSearch("heading-search", "search-results");
+      var mobileSearch = setupSearch("heading-search-mobile", "search-results-mobile");
+
+      function setupMobileNav() {
+        var dialog = document.getElementById("mobile-nav");
+        var openButton = document.getElementById("mobile-menu-button");
+        var closeButton = document.getElementById("mobile-nav-close");
+        openButton.addEventListener("click", function () { dialog.showModal(); openButton.setAttribute("aria-expanded", "true"); mobileSearch.focus(); });
+        closeButton.addEventListener("click", function () { dialog.close(); });
+        dialog.addEventListener("close", function () { openButton.setAttribute("aria-expanded", "false"); openButton.focus(); });
+        dialog.addEventListener("click", function (event) {
+          if (event.target === dialog) dialog.close();
+        });
+        dialog.querySelectorAll("a[href^='#']").forEach(function (link) { link.addEventListener("click", function () { dialog.close(); }); });
+      }
+
+      function setupInstallTabs() {
+        var section = document.getElementById("installation");
+        var tablist = document.getElementById("install-tabs");
+        if (!section || !tablist) return;
+        var chapterHeading = section.querySelector(":scope > h2");
+        chapterHeading.insertAdjacentElement("afterend", tablist);
+        tablist.hidden = false;
+        var panel = document.createElement("div");
+        panel.id = "installation-track-content";
+        panel.setAttribute("role", "tabpanel");
+        panel.setAttribute("aria-live", "polite");
+        while (tablist.nextSibling) panel.appendChild(tablist.nextSibling);
+        section.appendChild(panel);
+        var buttons = Array.from(tablist.querySelectorAll("[role='tab']"));
+        var environmentSection = document.getElementById("5-choose-an-environment-style");
+        var optionSections = Array.from(environmentSection ? environmentSection.querySelectorAll(":scope > section") : []).filter(function (candidate) {
+          var heading = candidate.querySelector(":scope > h4, :scope > h5");
+          return heading && /^Option [AB]/.test(heading.textContent);
+        });
+
+        function setTrack(track, focusTab, shouldAnnounce) {
+          panel.dataset.installTrack = track;
+          buttons.forEach(function (button) {
+            var selected = button.dataset.track === track;
+            button.setAttribute("aria-selected", String(selected));
+            button.tabIndex = selected ? 0 : -1;
+            if (selected && focusTab) button.focus();
+          });
+          panel.querySelectorAll(".code-frame").forEach(function (frame) {
+            var code = frame.querySelector("code");
+            var language = code ? codeLanguage(code) : "";
+            var hideForPlatform = track === "bash" ? language === "powershell" : language === "bash";
+            frame.dataset.installHidden = String(hideForPlatform);
+          });
+          optionSections.forEach(function (candidate) {
+            var heading = candidate.querySelector(":scope > h4, :scope > h5");
+            var isConda = heading.textContent.startsWith("Option B");
+            candidate.dataset.installHidden = String(track === "conda" ? !isConda : isConda);
+          });
+          try { localStorage.setItem("tabfm-install-track", track); } catch (_error) { /* Storage is optional. */ }
+          if (shouldAnnounce) announce(buttons.find(function (button) { return button.dataset.track === track; }).textContent + " installation track selected");
+        }
+
+        buttons.forEach(function (button, index) {
+          button.addEventListener("click", function () { setTrack(button.dataset.track, false, true); });
+          button.addEventListener("keydown", function (event) {
+            var next = index;
+            if (event.key === "ArrowRight") next = (index + 1) % buttons.length;
+            else if (event.key === "ArrowLeft") next = (index - 1 + buttons.length) % buttons.length;
+            else if (event.key === "Home") next = 0;
+            else if (event.key === "End") next = buttons.length - 1;
+            else return;
+            event.preventDefault();
+            setTrack(buttons[next].dataset.track, true, true);
+          });
+        });
+        var savedTrack = "powershell";
+        try { savedTrack = localStorage.getItem("tabfm-install-track") || "powershell"; } catch (_error) { /* Storage is optional. */ }
+        if (!buttons.some(function (button) { return button.dataset.track === savedTrack; })) savedTrack = "powershell";
+        setTrack(savedTrack, false, false);
+      }
+
+      function setupScrollTracking() {
+        var progress = document.getElementById("reading-progress");
+        var chapterLinks = Array.from(document.querySelectorAll(".chapter-nav a"));
+        var chapters = Array.from(document.querySelectorAll("#tutorial-content > section.level2"));
+        function updateProgress() {
+          var height = document.documentElement.scrollHeight - innerHeight;
+          progress.style.width = (height > 0 ? Math.min(100, Math.max(0, scrollY / height * 100)) : 0) + "%";
+        }
+        addEventListener("scroll", updateProgress, { passive: true });
+        updateProgress();
+        if ("IntersectionObserver" in window) {
+          var observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+              if (!entry.isIntersecting) return;
+              chapterLinks.forEach(function (link) {
+                var active = link.getAttribute("href") === "#" + entry.target.id;
+                if (active) link.setAttribute("aria-current", "location");
+                else link.removeAttribute("aria-current");
+              });
+            });
+          }, { rootMargin: "-18% 0px -70% 0px", threshold: 0 });
+          chapters.forEach(function (chapter) { observer.observe(chapter); });
+        }
+      }
+
+      document.addEventListener("keydown", function (event) {
+        var target = event.target;
+        var isTyping = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target.isContentEditable;
+        if ((event.ctrlKey || event.metaKey) && event.key.toLocaleLowerCase() === "k") {
+          event.preventDefault();
+          if (innerWidth <= 900) document.getElementById("mobile-menu-button").click();
+          else desktopSearch.focus();
+        } else if (event.key === "/" && !isTyping) {
+          event.preventDefault();
+          if (innerWidth <= 900) document.getElementById("mobile-menu-button").click();
+          else desktopSearch.focus();
+        }
+      });
+
+      prepareAdmonitions();
+      prepareLinks();
+      prepareTables();
+      prepareCode();
+      prepareMath();
+      setupMobileNav();
+      setupInstallTabs();
+      setupScrollTracking();
+      applyTheme(currentTheme(), false);
+      });
+    }());
+  </script>
+</body>
+</html>
