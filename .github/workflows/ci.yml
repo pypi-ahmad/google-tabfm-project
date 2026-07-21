@@ -31,7 +31,7 @@ jobs:
           cache-dependency-glob: uv.lock
 
       - name: Synchronize locked development environment
-        run: uv sync --locked
+        run: uv sync --locked --extra integrations
 
       - name: Lint Python
         run: uv run ruff check .
