@@ -1,5 +1,6 @@
 import streamlit as st
 
+from tabfm_workbench.config import Settings
 from tabfm_workbench.ui import (
     render_batch_predictions,
     render_single_prediction,
@@ -15,6 +16,6 @@ mode = st.segmented_control(
 )
 st.session_state.prediction_mode = mode
 if mode == "Batch":
-    render_batch_predictions()
+    render_batch_predictions(Settings())
 else:
     render_single_prediction()

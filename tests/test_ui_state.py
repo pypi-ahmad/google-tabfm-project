@@ -4,6 +4,7 @@ import pandas as pd
 
 from tabfm_workbench.loader import DatasetArtifact
 from tabfm_workbench.ui import (
+    _invalidate_prepared_state,
     activate_artifact_state,
     batch_input_signature,
     clear_loaded_datasets_state,
@@ -95,6 +96,48 @@ def test_start_new_task_keeps_artifacts_and_history_but_clears_task_outputs() ->
         "current_bundle",
         "eda_numeric",
         "prediction_mode",
+    ):
+        assert key not in state
+
+
+def test_invalidate_prepared_state_clears_all_derived_bundles_and_records() -> None:
+    artifacts = {"a.csv": object()}
+    state = {
+        "artifacts": artifacts,
+        "target_column": "label",
+        "prepared_predictor": object(),
+        "prepared_signature": "sig-1",
+        "prepared_target": "label",
+        "batch_result": object(),
+        "batch_features": object(),
+        "batch_bundle": b"zip-batch",
+        "batch_record": object(),
+        "single_result": object(),
+        "single_features": object(),
+        "single_bundle": b"zip-single",
+        "single_record": object(),
+        "current_bundle": b"zip-single",
+        "current_record": object(),
+    }
+
+    _invalidate_prepared_state(state)
+
+    assert state["artifacts"] is artifacts
+    assert state["target_column"] == "label"
+    for key in (
+        "prepared_predictor",
+        "prepared_signature",
+        "prepared_target",
+        "batch_result",
+        "batch_features",
+        "batch_bundle",
+        "batch_record",
+        "single_result",
+        "single_features",
+        "single_bundle",
+        "single_record",
+        "current_bundle",
+        "current_record",
     ):
         assert key not in state
 

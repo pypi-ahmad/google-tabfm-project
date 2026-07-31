@@ -1,5 +1,7 @@
 """Streamlit entrypoint for the local TabFM research workbench."""
 
+import sqlite3
+
 import streamlit as st
 
 from tabfm_workbench.config import Settings
@@ -30,5 +32,12 @@ st.warning("Research use only. TabFM weights prohibit commercial and production 
 render_sidebar(settings)
 try:
     page.run()
-except (DataFormatError, RemoteFetchError, ProviderError, InferenceError, RuntimeError) as exc:
+except (
+    DataFormatError,
+    RemoteFetchError,
+    ProviderError,
+    InferenceError,
+    RuntimeError,
+    sqlite3.Error,
+) as exc:
     st.error(str(exc))

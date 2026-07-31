@@ -3,6 +3,7 @@
 import asyncio
 import hashlib
 import json
+import sqlite3
 from datetime import UTC, datetime
 from io import BytesIO
 from pathlib import Path
@@ -196,7 +197,8 @@ def initialize_session_state(settings: Settings) -> None:
     st.session_state.setdefault("artifacts", {})
     st.session_state.setdefault("upload_generation", 0)
     st.session_state.setdefault("task_generation", 0)
-    st.session_state.setdefault("history_repository", HistoryRepository(settings.tabfm_history_dir))
+    if "history_repository" not in st.session_state:
+        st.session_state.history_repository = HistoryRepository(settings.tabfm_history_dir)
 
 
 def render_sidebar(settings: Settings) -> None:
@@ -388,7 +390,7 @@ def render_model_context(settings: Settings) -> None:
     features = labeled.drop(columns=[target])
     signature = context_fingerprint(features, labeled[target], task)
     if st.session_state.get("context_signature") not in {None, signature}:
-        _invalidate_prepared_state()
+        _invalidate_prepared_state(st.session_state)
     st.session_state.context_signature = signature
 
     left, middle, right = st.columns(3)
@@ -421,7 +423,7 @@ def render_model_context(settings: Settings) -> None:
         st.success("Prepared context is current.")
 
 
-def render_batch_predictions() -> None:
+def render_batch_predictions(settings: Settings) -> None:
     """Predict blank-target rows or a separately uploaded table."""
     st.subheader("Batch Predictions")
     predictor = _current_predictor()
@@ -448,6 +450,9 @@ def render_batch_predictions() -> None:
         )
         if upload is None:
             st.info("Upload a test table to continue.")
+            return
+        if upload.size > settings.tabfm_max_upload_mb * 1024 * 1024:
+            st.error(f"{upload.name}: upload exceeds configured size limit.")
             return
         tests = load_table(BytesIO(upload.getvalue()), upload.name)
         expected = tests[target] if target in tests.columns else None
@@ -508,22 +513,24 @@ def render_single_prediction() -> None:
 def _feature_input(name: str, values: pd.Series) -> Any:
     non_null = values.dropna()
     if pd.api.types.is_bool_dtype(values):
-        return st.selectbox(name, [False, True], key=_task_key(f"single_{name}"))
+        return st.selectbox(name, [False, True], key=_task_key(f"single_feature::{name}"))
     if pd.api.types.is_numeric_dtype(values):
         numeric_default = float(non_null.median()) if not non_null.empty else 0.0
-        return st.number_input(name, value=numeric_default, key=_task_key(f"single_{name}"))
+        return st.number_input(
+            name, value=numeric_default, key=_task_key(f"single_feature::{name}")
+        )
     if pd.api.types.is_datetime64_any_dtype(values):
         date_default = (
             non_null.iloc[0].date() if not non_null.empty else pd.Timestamp.today().date()
         )
         return pd.Timestamp(
-            st.date_input(name, value=date_default, key=_task_key(f"single_{name}"))
+            st.date_input(name, value=date_default, key=_task_key(f"single_feature::{name}"))
         )
     categories = sorted(map(str, non_null.unique()))
     if categories and len(categories) <= 50:
-        return st.selectbox(name, categories, key=_task_key(f"single_{name}"))
+        return st.selectbox(name, categories, key=_task_key(f"single_feature::{name}"))
     text_default = str(non_null.iloc[0]) if not non_null.empty else ""
-    return st.text_input(name, value=text_default, key=_task_key(f"single_{name}"))
+    return st.text_input(name, value=text_default, key=_task_key(f"single_feature::{name}"))
 
 
 def _render_result(
@@ -671,15 +678,23 @@ def _current_predictor() -> PreparedPredictor | None:
     return st.session_state.get("prepared_predictor")
 
 
-def _invalidate_prepared_state() -> None:
+def _invalidate_prepared_state(state: Any) -> None:
     for key in (
         "prepared_predictor",
         "prepared_signature",
         "prepared_target",
         "batch_result",
+        "batch_features",
+        "batch_bundle",
+        "batch_record",
         "single_result",
+        "single_features",
+        "single_bundle",
+        "single_record",
+        "current_bundle",
+        "current_record",
     ):
-        st.session_state.pop(key, None)
+        state.pop(key, None)
 
 
 def _status_line(label: str, ready: bool) -> None:
@@ -737,7 +752,7 @@ def _archive_prediction(
         st.session_state[f"{result_kind}_record"] = record
         st.session_state.current_bundle = bundle.data
         st.session_state.current_record = record
-    except (OSError, RuntimeError, ValueError) as exc:
+    except (OSError, RuntimeError, ValueError, sqlite3.Error) as exc:
         st.session_state.pop("current_bundle", None)
         st.session_state.pop(f"{result_kind}_bundle", None)
         st.session_state.pop(f"{result_kind}_record", None)
@@ -745,7 +760,7 @@ def _archive_prediction(
             failed = repository.create(RunRecord.failed(report, str(exc)))
             st.session_state[f"{result_kind}_record"] = failed
             st.session_state.current_record = failed
-        except (OSError, RuntimeError, ValueError):
+        except (OSError, RuntimeError, ValueError, sqlite3.Error):
             st.session_state.pop("current_record", None)
         st.warning(f"Predictions are ready, but the report bundle could not be saved: {exc}")
 
@@ -923,7 +938,11 @@ def render_history(settings: Settings) -> None:
     for warning in st.session_state.pop("history_cleanup_warnings", ()):
         st.warning(f"History metadata was cleared, but cleanup was incomplete: {warning}")
     page = int(st.number_input("Page", min_value=1, step=1, value=1, key="history_page"))
-    records = repository.list(page)
+    try:
+        records = repository.list(page)
+    except sqlite3.Error as exc:
+        st.error(f"History could not be read right now: {exc}")
+        return
     if not records:
         st.info("No saved runs on this page.")
     else:
@@ -980,7 +999,11 @@ def render_history(settings: Settings) -> None:
 def _confirm_clear_history(repository: HistoryRepository) -> None:
     st.warning("This permanently removes indexed run metadata and its report bundles.")
     if st.button("Clear history permanently", type="primary", icon=":material/delete_forever:"):
-        warnings = repository.clear()
+        try:
+            warnings = repository.clear()
+        except sqlite3.Error as exc:
+            st.error(f"History could not be cleared right now: {exc}")
+            return
         st.session_state.pop("current_bundle", None)
         st.session_state.pop("current_record", None)
         if warnings:
