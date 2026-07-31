@@ -8,6 +8,7 @@
 pytest-cache-files-*/
 .test-temp/
 data/test-temp/
+data/test-history/
 .ruff_cache/
 .mypy_cache/
 __pycache__/
