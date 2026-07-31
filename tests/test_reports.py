@@ -20,6 +20,7 @@ from tabfm_workbench.reports import (
     ReportInput,
     RunRecord,
     generate_report_bundle,
+    sanitize_for_csv_export,
 )
 
 
@@ -99,6 +100,45 @@ def test_report_bundle_is_self_contained_complete_and_parseable() -> None:
         )
 
     assert generate_report_bundle(report_input).data == bundle.data
+
+
+def test_sanitize_for_csv_export_neutralizes_formula_prefixes() -> None:
+    frame = pd.DataFrame(
+        {
+            "feature": ["=cmd|'/c calc'!A1", "+1+1", "-1", "@SUM(A1)", "\tx", "\rx", "safe"],
+            "target": range(7),
+        }
+    )
+
+    sanitized = sanitize_for_csv_export(frame)
+
+    assert sanitized["feature"].tolist() == [
+        "'=cmd|'/c calc'!A1",
+        "'+1+1",
+        "'-1",
+        "'@SUM(A1)",
+        "'\tx",
+        "'\rx",
+        "safe",
+    ]
+    assert sanitized["target"].tolist() == frame["target"].tolist()
+
+
+def test_report_bundle_predictions_csv_neutralizes_formula_injection() -> None:
+    report_input = _report_input()
+    malicious = replace(
+        report_input,
+        predictions=report_input.predictions.assign(
+            group=["=HYPERLINK(\"http://evil.example\")"] * len(report_input.predictions)
+        ),
+    )
+
+    bundle = generate_report_bundle(malicious)
+
+    with zipfile.ZipFile(io.BytesIO(bundle.data)) as archive:
+        csv_text = archive.read("predictions.csv").decode()
+        assert "\n=HYPERLINK" not in csv_text
+        assert "'=HYPERLINK" in csv_text
 
 
 def test_classification_report_serializes_bounded_diagnostics() -> None:

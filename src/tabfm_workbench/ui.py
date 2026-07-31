@@ -34,7 +34,13 @@ from .predictor import (
     suggest_task,
 )
 from .remote import fetch_dataset
-from .reports import HistoryRepository, ReportInput, RunRecord, generate_report_bundle
+from .reports import (
+    HistoryRepository,
+    ReportInput,
+    RunRecord,
+    generate_report_bundle,
+    sanitize_for_csv_export,
+)
 
 PREPARED_STATE_KEYS = (
     "prepared_predictor",
@@ -535,7 +541,7 @@ def _render_result(
     st.dataframe(output, width="stretch")
     st.download_button(
         "Download predictions",
-        output.to_csv(index=False).encode("utf-8"),
+        sanitize_for_csv_export(output).to_csv(index=False).encode("utf-8"),
         file_name=filename,
         mime="text/csv",
     )

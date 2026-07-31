@@ -166,7 +166,10 @@ def generate_report_bundle(report: ReportInput) -> ReportBundle:
     members = (
         ("report.html", html_bytes),
         ("report.pdf", pdf_bytes),
-        ("predictions.csv", report.predictions.to_csv(index=False).encode("utf-8")),
+        (
+            "predictions.csv",
+            sanitize_for_csv_export(report.predictions).to_csv(index=False).encode("utf-8"),
+        ),
         (
             "metrics.json",
             json.dumps(metrics, indent=2, sort_keys=True, allow_nan=False).encode("utf-8"),
@@ -493,6 +496,27 @@ def _serialize_frame(
         "columns_truncated": len(preview.columns) < total_columns,
         "truncated": len(preview) < total_rows or len(preview.columns) < total_columns,
     }
+
+
+_CSV_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
+
+
+def sanitize_for_csv_export(frame: pd.DataFrame) -> pd.DataFrame:
+    """Neutralize CSV/formula injection (CWE-1236) before writing untrusted data to CSV.
+
+    A string cell starting with =, +, -, @, tab, or CR can execute as a formula
+    when the exported file is later opened in Excel/Sheets/LibreOffice. Feature
+    values here originate from user-supplied datasets (upload/URL/provider), so
+    they are untrusted. Prefixing with a single quote forces text interpretation
+    without changing the visible value in spreadsheet software.
+    """
+
+    def escape(value: object) -> object:
+        if isinstance(value, str) and value.startswith(_CSV_FORMULA_PREFIXES):
+            return "'" + value
+        return value
+
+    return frame.map(escape)
 
 
 def _json_scalar(value: object) -> object:
