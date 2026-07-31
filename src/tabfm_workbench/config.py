@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     tabfm_accept_non_commercial_license: bool = False
     tabfm_device: Literal["auto", "cuda", "cpu"] = "auto"
     tabfm_model_cache_dir: Path = Path("data/cache/models")
+    tabfm_history_dir: Path = Path("data/sessions/history")
     tabfm_session_ttl_hours: int = Field(default=24, ge=1, le=168)
     tabfm_max_upload_mb: int = Field(default=500, ge=1, le=2048)
     tabfm_max_download_mb: int = Field(default=500, ge=1, le=2048)

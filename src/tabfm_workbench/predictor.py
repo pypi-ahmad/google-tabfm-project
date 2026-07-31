@@ -2,20 +2,14 @@
 
 import hashlib
 import logging
-from contextlib import suppress
 from dataclasses import dataclass
 from time import perf_counter
 from typing import Any, Literal, Protocol, cast
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import (
-    accuracy_score,
-    log_loss,
-    mean_absolute_error,
-    mean_squared_error,
-    r2_score,
-)
+
+from .analytics import EvaluationDiagnostics, evaluate_predictions
 
 TaskType = Literal["classification", "regression"]
 MetricValue = float | int
@@ -53,6 +47,16 @@ class PredictionResult:
     warnings: tuple[str, ...]
     latency_ms: float
     device: str
+    diagnostics: EvaluationDiagnostics | None = None
+
+
+def _normalize_feature_columns(frame: pd.DataFrame) -> pd.DataFrame:
+    normalized = [str(column) for column in frame.columns]
+    if len(set(normalized)) != len(normalized):
+        raise InferenceError("Feature column names collide after normalization to strings.")
+    result = frame.copy()
+    result.columns = normalized
+    return result
 
 
 def suggest_task(target: pd.Series) -> TaskSuggestion:
@@ -106,6 +110,7 @@ class PreparedPredictor:
         self.is_prepared = False
 
     def prepare(self, features: pd.DataFrame, target: pd.Series) -> "PreparedPredictor":
+        features = _normalize_feature_columns(features)
         if len(features) < 2:
             raise InferenceError("At least two labeled context rows are required.")
         if features.columns.duplicated().any():
@@ -128,7 +133,7 @@ class PreparedPredictor:
                 raise InferenceError("Regression target must contain only numeric labeled values.")
 
         self.estimator.fit(features, prepared_target)
-        self.feature_columns = [str(column) for column in features.columns]
+        self.feature_columns = list(features.columns)
         self.is_prepared = True
         return self
 
@@ -142,7 +147,7 @@ class PreparedPredictor:
             raise InferenceError("Prepare the model context before prediction.")
         if features.empty:
             raise InferenceError("At least one prediction row is required.")
-        alignment = align_features(features, self.feature_columns)
+        alignment = align_features(_normalize_feature_columns(features), self.feature_columns)
         warnings = _alignment_warnings(alignment)
         started = perf_counter()
         values = self.estimator.predict(alignment.frame)
@@ -156,7 +161,12 @@ class PreparedPredictor:
                 columns=list(classifier.classes_),
             )
         latency_ms = (perf_counter() - started) * 1000
-        metrics = self._evaluate(predictions, probabilities, expected)
+        diagnostics = (
+            evaluate_predictions(self.task, expected, predictions, probabilities)
+            if expected is not None and expected.reindex(predictions.index).notna().any()
+            else None
+        )
+        metrics = dict(diagnostics.metrics) if diagnostics is not None else {}
         logger.info(
             "tabfm_prediction_complete task=%s test_rows=%d features=%d latency_ms=%.1f device=%s",
             self.task,
@@ -172,42 +182,8 @@ class PreparedPredictor:
             warnings=warnings,
             latency_ms=latency_ms,
             device=self.device,
+            diagnostics=diagnostics,
         )
-
-    def _evaluate(
-        self,
-        predictions: pd.Series,
-        probabilities: pd.DataFrame | None,
-        expected: pd.Series | None,
-    ) -> dict[str, MetricValue]:
-        if expected is None:
-            return {}
-        labeled = expected.reindex(predictions.index).notna()
-        if not labeled.any():
-            return {}
-        actual = expected.reindex(predictions.index).loc[labeled]
-        predicted = predictions.loc[labeled]
-        metrics: dict[str, MetricValue] = {"evaluated_rows": int(labeled.sum())}
-        if self.task == "classification":
-            metrics["accuracy"] = float(accuracy_score(actual, predicted))
-            if probabilities is not None:
-                with suppress(ValueError):
-                    metrics["log_loss"] = float(
-                        log_loss(actual, probabilities.loc[labeled], labels=probabilities.columns)
-                    )
-            return metrics
-        numeric_actual = pd.to_numeric(actual, errors="coerce")
-        valid = numeric_actual.notna()
-        numeric_predicted = pd.to_numeric(predicted.loc[valid], errors="coerce")
-        numeric_actual = numeric_actual.loc[valid]
-        metrics["evaluated_rows"] = int(valid.sum())
-        if not valid.any():
-            return metrics
-        metrics["mae"] = float(mean_absolute_error(numeric_actual, numeric_predicted))
-        metrics["rmse"] = float(np.sqrt(mean_squared_error(numeric_actual, numeric_predicted)))
-        if valid.sum() >= 2:
-            metrics["r2"] = float(r2_score(numeric_actual, numeric_predicted))
-        return metrics
 
 
 def _alignment_warnings(alignment: SchemaAlignment) -> tuple[str, ...]:

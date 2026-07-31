@@ -44,3 +44,17 @@ def test_load_many_keeps_valid_files_when_one_file_is_invalid() -> None:
 def test_load_table_rejects_empty_dataset() -> None:
     with pytest.raises(DataFormatError, match="no rows"):
         load_table(BytesIO(b"x,target\n"), "empty.csv")
+
+
+def test_load_table_normalizes_column_labels_to_strings(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(pd, "read_csv", lambda source: pd.DataFrame([[1]], columns=[7]))
+    table = load_table(BytesIO(b"ignored"), "sample.csv")
+    assert table.columns.tolist() == ["7"]
+
+
+def test_load_table_rejects_column_collisions_after_stringification(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(pd, "read_csv", lambda source: pd.DataFrame([[1, 2]], columns=[1, "1"]))
+    with pytest.raises(DataFormatError, match="after normalization"):
+        load_table(BytesIO(b"ignored"), "sample.csv")

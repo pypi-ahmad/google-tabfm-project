@@ -95,3 +95,43 @@ def test_classification_metrics_support_numeric_class_labels() -> None:
     session.prepare(pd.DataFrame({"x": [1, 2]}), pd.Series([0, 1]))
     result = session.predict(pd.DataFrame({"x": [3]}), expected=pd.Series([1]))
     assert "log_loss" in result.metrics
+
+
+def test_prediction_result_exposes_comprehensive_diagnostics() -> None:
+    estimator = FakeEstimator()
+    session = PreparedPredictor("classification", estimator, device="cpu")
+    session.prepare(pd.DataFrame({"x": [1, 2]}), pd.Series(["no", "yes"]))
+
+    result = session.predict(pd.DataFrame({"x": [3]}), expected=pd.Series(["yes"]))
+
+    assert result.diagnostics is not None
+    assert result.diagnostics.metrics == result.metrics
+    assert result.diagnostics.confusion_matrix is not None
+
+
+def test_unlabeled_prediction_has_no_diagnostics() -> None:
+    session = PreparedPredictor("classification", FakeEstimator(), device="cpu")
+    session.prepare(pd.DataFrame({"x": [1, 2]}), pd.Series(["no", "yes"]))
+
+    result = session.predict(pd.DataFrame({"x": [3]}))
+
+    assert result.metrics == {}
+    assert result.diagnostics is None
+
+
+def test_predictor_normalizes_programmatic_feature_labels() -> None:
+    estimator = FakeEstimator()
+    session = PreparedPredictor("classification", estimator, device="cpu")
+    session.prepare(pd.DataFrame([[1], [2]], columns=[7]), pd.Series(["no", "yes"]))
+    result = session.predict(pd.DataFrame([[3]], columns=[7]))
+    assert session.feature_columns == ["7"]
+    assert result.predictions.tolist() == ["yes"]
+
+
+def test_predictor_rejects_stringified_feature_label_collisions() -> None:
+    session = PreparedPredictor("classification", FakeEstimator(), device="cpu")
+    with pytest.raises(InferenceError, match="after normalization"):
+        session.prepare(
+            pd.DataFrame([[1, 2], [3, 4]], columns=[1, "1"]),
+            pd.Series(["no", "yes"]),
+        )

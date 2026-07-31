@@ -28,7 +28,9 @@ single-row predictions without dataset-specific weight training.
 | Two tasks | Classification with 2–10 classes and numeric regression |
 | In-context adaptation | `fit()` prepares encoders and labeled context; pretrained weights remain frozen |
 | Prediction modes | Blank-target rows, separate test files, and typed manual cases |
-| Evaluation | Accuracy/log loss or MAE/RMSE/R² when held-out labels are available |
+| Evaluation | Full classification/regression diagnostics when held-out labels are available |
+| EDA and reports | Bounded interactive EDA plus automatic HTML/PDF/CSV/JSON report bundles |
+| Durable history | Permanent local run index with downloadable bundles, 10 runs per page |
 | Local-first security | Loopback binding, environment-only secrets, bounded URL downloads, local artifacts |
 | Reproducibility | Python 3.12.10, uv lockfile, deterministic eight-member ensemble |
 
@@ -42,7 +44,8 @@ flowchart LR
     D --> E[Labeled context + test rows]
     E --> F[TabFM preprocessing and frozen ICL model]
     F --> G[Class probabilities or regression values]
-    G --> H[Metrics, preview, and CSV download]
+    G --> H[Metrics and bounded EDA]
+    H --> I[Automatic report bundle and local history]
 ```
 
 TabFM reframes tabular prediction as in-context learning: labeled rows and new test rows form one
@@ -52,19 +55,31 @@ and [official PyTorch model card](https://huggingface.co/google/tabfm-1.0.0-pyto
 
 ## Quick start
 
-### 1. Clone and install
+### 1. Clone into a local Windows 11 workspace
+
+Install `uv` with its official Windows installer, then verify that the command is available. If
+your environment requires script review, inspect the installer URL before piping it to PowerShell.
 
 ```powershell
-git clone https://github.com/pypi-ahmad/google-tabfm-project.git
-Set-Location google-tabfm-project
-uv python install 3.12.10
-
-# Choose one runtime:
-uv sync --locked --extra cu130 --extra integrations  # NVIDIA CUDA 13.0
-# uv sync --locked --extra cpu --extra integrations  # CPU fallback
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+uv --version
 ```
 
-On macOS/Linux, replace `Set-Location` with `cd`. CPU inference is supported but can be very slow.
+Clone and install the pinned Python runtime and dependencies:
+
+```powershell
+Set-Location D:\AI\Github
+git clone https://github.com/pypi-ahmad/google-tabfm-project.git
+Set-Location D:\AI\Github\google-tabfm-project
+uv python install 3.12.10
+
+# Choose exactly one runtime.
+uv sync --locked --extra cu130 --extra integrations  # NVIDIA CUDA 13
+# uv sync --locked --extra cpu --extra integrations  # CPU (much slower)
+```
+
+If you clone elsewhere, use that actual path in `Set-Location`. On macOS/Linux, use `cd` and the
+CPU sync command; CUDA installation is platform/driver dependent. CPU inference can be very slow.
 
 ### 2. Configure local settings
 
@@ -82,7 +97,7 @@ Review the model-weight license. Only for a permitted use, change this local set
 TABFM_ACCEPT_NON_COMMERCIAL_LICENSE=true
 ```
 
-Optional provider credentials are read from `.env`/environment only:
+Optional provider credentials are read from `.env`/environment only. Leave unused values blank:
 
 ```dotenv
 HF_TOKEN=
@@ -101,13 +116,26 @@ uv run --env-file .env streamlit run app.py
 
 Open `http://127.0.0.1:8501` if the browser does not launch automatically.
 
-### 4. Predict
+### 4. Complete the five-page workflow
 
-1. Load one or more datasets in **Data Loading** and select the active table.
-2. Choose a target and task in **Model & Context**, then prepare labeled context.
-3. Predict blank-target rows or upload a separate test table in **Batch Predictions**.
-4. Build a typed row interactively in **Single Test Case**.
-5. Inspect probabilities/metrics and download predictions as CSV.
+1. **Data** — load one or more tables and select the active dataset.
+2. **Model** — choose the target/task and prepare labeled context. The first load downloads the
+   appropriate checkpoint; weights remain frozen.
+3. **Predictions** — use **Batch** for blank-target rows or a separate test file, or **Single** for
+   one typed case. Submit a prediction and inspect results and held-out metrics when labels exist.
+4. **EDA & Reports** — inspect data quality and bounded charts, then download the report bundle
+   automatically generated after every successful prediction run.
+5. **History** — revisit saved run metadata and download any still-available bundle.
+
+The prediction ZIP contains exactly `report.html`, `report.pdf`, `predictions.csv`, and
+`metrics.json`. History is local and persistent; see [Local state and privacy](#local-state-and-privacy).
+
+## Guides
+
+| Document | Best for |
+|---|---|
+| [GETTING_STARTED.md](GETTING_STARTED.md) | Clone, install, configure, and run the app in five minutes, plus why you'd use it |
+| [GUIDE.md](GUIDE.md) | The complete guide — business + technical: every feature explained in depth, the AI theory in plain language, the code implementation, and the security model, all in one file |
 
 ## Zero-to-Master tutorial
 
@@ -152,21 +180,60 @@ prediction state.
 See [architecture and security decisions](docs/architecture.md) and
 [the security policy](SECURITY.md).
 
+## Local state and privacy
+
+`TABFM_HISTORY_DIR` configures permanent local history storage and defaults to
+`data/sessions/history`. It contains `history.sqlite3` metadata and external ZIP bundles under
+`bundles/`. There is no automatic eviction: datasets, predictions, targets, metrics, and report
+content can remain on disk until you clear history or remove the directory. Do not use sensitive
+data unless that persistence is acceptable and the workstation is appropriately protected.
+
+- **Clear loaded datasets** removes all loaded tables and their in-memory model/prediction state;
+  it does not delete provider downloads or permanent history.
+- **Start new task** resets target, prepared context, prediction inputs/results, and current report
+  references while retaining loaded datasets and permanent history.
+- **Clear history** requires confirmation, permanently deletes SQLite-indexed metadata first, then
+  attempts best-effort report-bundle removal; it does not clear loaded datasets or provider
+  downloads. A locked ZIP can remain orphaned. The UI reports cleanup warnings; after closing
+  processes that hold the files, manually remove each warned ZIP or the history directory.
+
+History is newest-first and paginated at 10 runs per page. A `failed` run means predictions
+completed but report persistence failed. An `unavailable` run has malformed metadata or a missing,
+corrupt, or unsafe bundle; its metadata remains visible but the bundle cannot be downloaded.
+
+## Evaluation and reports
+
+Classification diagnostics include evaluated rows, accuracy, balanced accuracy, macro
+precision/recall/F1, MCC, majority-baseline accuracy and lift, confusion/per-class tables, and—when
+compatible probabilities exist—log loss and ROC-AUC/ROC data. Regression diagnostics include
+evaluated rows, MAE, RMSE, median absolute error, mean-baseline MAE/RMSE and MAE lift, R², explained
+variance, residuals, actual-versus-predicted data, and error quantiles. Undefined metrics are
+reported as warnings rather than fabricated values.
+
+EDA summaries use the full table, while chart samples are deterministic and capped at 10,000 rows;
+scatter plots use at most 5,000 rows, correlations at most 20 numeric columns, and categorical
+charts show the top 20 values. Report generation depends on Altair/Vega conversion and ReportLab:
+this adds local rendering dependencies but produces self-contained HTML and PDF artifacts.
+
 ## Repository structure
 
 ```text
 .
 ├── app.py                       # Streamlit entry point
+├── app_pages/                   # Data, Model, Predictions, EDA & Reports, History pages
 ├── src/tabfm_workbench/
 │   ├── config.py                # Validated environment settings and license gate
 │   ├── loader.py                # CSV/Parquet/XLSX loading and row partitioning
 │   ├── remote.py                # Bounded HTTPS retrieval
 │   ├── integrations.py          # Kaggle, Hugging Face, and MCP adapters
 │   ├── predictor.py             # TabFM preparation, alignment, metrics, prediction
-│   └── ui.py                    # Streamlit views and session orchestration
+│   ├── analytics.py             # Bounded EDA and evaluation diagnostics
+│   ├── reports.py               # Report bundles and durable local history
+│   └── ui.py                    # Page views and session orchestration
 ├── docs/
 │   ├── architecture.md
 │   └── tutorial/                # Four-part Zero-to-Master guide
+├── data/downloads/               # Local provider/manual datasets (gitignored)
 ├── tests/                       # Unit and Streamlit smoke tests using deterministic fakes
 ├── pyproject.toml
 └── uv.lock

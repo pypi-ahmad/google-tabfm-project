@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import argparse
 import re
 import sys
 import tempfile
@@ -59,7 +60,7 @@ EXPECTED_TITLES: Final = (
     "Interactive UI Features",
     "Local Setup & Installation",
     "Performance & Pitfalls",
-    "Build Your First Context",
+    "Call to Action",
 )
 
 
@@ -1024,17 +1025,22 @@ def add_link_card(
 
 
 def build_cta_slide(
-    prs: PresentationType, intro: MarkdownDocument, installation: MarkdownDocument
+    prs: PresentationType,
+    intro: MarkdownDocument,
+    installation: MarkdownDocument,
+    *,
+    github_url: str | None = None,
+    docs_url: str | None = None,
 ) -> None:
     slide = _new_slide(prs)
-    project_url = _project_url(installation)
-    docs_url = f"{project_url}#zero-to-master-tutorial"
+    project_url = github_url or _project_url(installation)
+    docs_url = docs_url or f"{project_url}#zero-to-master-tutorial"
     docs_label = docs_url.removeprefix("https://")
     official_url = intro.reference_url("tabfm-repo")
 
     add_badge(slide, "NEXT STEP", 0.62, 0.62, 1.2)
     add_text(
-        slide, "Build Your First Context", 0.62, 1.22, 8.2, 0.68, size=34, color=WHITE, bold=True
+        slide, "Call to Action", 0.62, 1.22, 8.2, 0.68, size=34, color=WHITE, bold=True
     )
     add_text(
         slide,
@@ -1061,7 +1067,7 @@ def build_cta_slide(
     add_link_card(
         slide,
         "PROJECT",
-        "github.com/pypi-ahmad/google-tabfm-project",
+        project_url.removeprefix("https://"),
         project_url,
         9.35,
         1.62,
@@ -1145,7 +1151,13 @@ def validate_presentation(path: Path) -> None:
         raise RuntimeError(f"Expected at least 3 resource hyperlinks, found {hyperlink_count}")
 
 
-def generate_presentation(source_dir: Path, output_path: Path) -> Path:
+def generate_presentation(
+    source_dir: Path,
+    output_path: Path,
+    *,
+    github_url: str | None = None,
+    docs_url: str | None = None,
+) -> Path:
     """Compile tutorial content into an atomic, validated PowerPoint file."""
     documents = load_sources(source_dir)
     output_path = output_path.resolve()
@@ -1161,7 +1173,13 @@ def generate_presentation(source_dir: Path, output_path: Path) -> Path:
     build_ui_slide(prs, documents["mastery"])
     build_setup_slide(prs, documents["installation"])
     build_performance_slide(prs, documents["introduction"], documents["mastery"])
-    build_cta_slide(prs, documents["introduction"], documents["installation"])
+    build_cta_slide(
+        prs,
+        documents["introduction"],
+        documents["installation"],
+        github_url=github_url,
+        docs_url=docs_url,
+    )
 
     temporary_path: Path | None = None
     try:
@@ -1178,10 +1196,28 @@ def generate_presentation(source_dir: Path, output_path: Path) -> Path:
     return output_path
 
 
-def main() -> int:
-    """Generate the deck using repository-relative defaults."""
+def main(argv: Sequence[str] | None = None) -> int:
+    """Generate the deck using repository-relative defaults.
+
+    ``--github-url`` and ``--docs-url`` are optional; when omitted, both are
+    derived from the tutorial Markdown, so the script still runs argless.
+    """
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--github-url",
+        default=None,
+        help="Project repository URL (default: derived from 02_installation.md)",
+    )
+    parser.add_argument(
+        "--docs-url",
+        default=None,
+        help="Documentation URL (default: project URL + #zero-to-master-tutorial)",
+    )
+    args = parser.parse_args(argv)
     try:
-        generated = generate_presentation(SOURCE_DIR, OUTPUT_PATH)
+        generated = generate_presentation(
+            SOURCE_DIR, OUTPUT_PATH, github_url=args.github_url, docs_url=args.docs_url
+        )
     except (OSError, ValueError, RuntimeError) as exc:
         print(f"Failed to create presentation: {exc}", file=sys.stderr)
         return 1

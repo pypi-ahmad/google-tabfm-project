@@ -250,7 +250,8 @@ needed for private or gated datasets and may improve authenticated rate-limit be
 
 ### Create least-privilege access
 
-1. Open [Hugging Face token settings][hf-tokens].
+1. Follow the public [Hugging Face user access token guide][hf-token-roles], then open the token
+   settings page from the Hugging Face UI.
 2. Create a dedicated **read** token, or a fine-grained token limited to required repositories.
 3. If a dataset is gated, accept its access conditions in the browser using the same account.
 4. Place the token in local `.env`:
@@ -281,7 +282,8 @@ the recommended environment token and the legacy username/key methods.
 
 ### Option A — environment API token (recommended)
 
-1. Open [Kaggle API settings][kaggle-settings].
+1. Follow Kaggle's public [official authentication guide][kaggle-auth], then open **Settings** from
+   your Kaggle account UI and find the API section.
 2. Create/copy an API token.
 3. Set it only in `.env`:
 
@@ -408,9 +410,7 @@ Continue to [03 — Data Handling](03_data_handling.md) to import local and remo
 preserving schema, provenance, and credential boundaries.
 
 [hf-token-roles]: https://huggingface.co/docs/hub/security-tokens
-[hf-tokens]: https://huggingface.co/settings/tokens
 [kaggle-auth]: https://github.com/Kaggle/kaggle-cli/blob/main/docs/README.md#authentication
-[kaggle-settings]: https://www.kaggle.com/settings/api
 [streamlit-run]: https://docs.streamlit.io/develop/api-reference/cli/run
 [tabfm-license]: https://huggingface.co/google/tabfm-1.0.0-pytorch/blob/main/LICENSE
 [tabfm-loader]: https://github.com/google-research/tabfm/blob/cb6ba46b7ebc9a6581a81827e14e9c246202afb9/tabfm/src/pytorch/tabfm_v1_0_0.py

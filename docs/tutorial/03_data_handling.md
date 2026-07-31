@@ -31,7 +31,7 @@ flowchart TD
 
 The application parses each uploaded file independently. One malformed file produces one visible
 error; valid siblings remain available. Loaded tables are registered in Streamlit session state,
-and the selected active artifact feeds the Model & Context tab.
+and the selected active artifact feeds the **Model** page.
 
 ## 2. Supported table formats
 
@@ -82,7 +82,7 @@ If `churned` is selected as the target:
 
 ## 4. Load multiple local files
 
-1. Start the app and open **Data Loading**.
+1. Start the app and open **Data**.
 2. Expand **Local files**.
 3. Choose **Upload CSV, Parquet, or XLSX files**.
 4. Select one or more files in the file picker.
@@ -185,7 +185,7 @@ selected revision into the Hub cache
 
 ### UI workflow
 
-1. Open **Data Loading → Hugging Face Hub**.
+1. Open **Data**, then expand **Hugging Face Hub**.
 2. Enter a keyword such as `titanic`.
 3. Select **Search Hugging Face**.
 4. Choose a repository ID from **Dataset repository**.
@@ -232,7 +232,7 @@ Kaggle datasets are addressed as `owner/dataset-slug`. Authentication occurs whe
 
 ### UI workflow
 
-1. Open **Data Loading → Kaggle**.
+1. Open **Data**, then expand **Kaggle**.
 2. Enter a search term.
 3. Select **Search Kaggle**.
 4. Choose the dataset reference.
@@ -304,13 +304,21 @@ data/
 ├── downloads/
 │   ├── huggingface/         # copied Hub files; gitignored
 │   └── kaggle/              # unzipped provider datasets; gitignored
-├── sessions/                # reserved session data; gitignored
-└── uploads/                 # reserved uploaded data; gitignored
+├── sessions/
+│   └── history/             # durable SQLite index and report ZIPs; gitignored
+└── uploads/                 # reserved path; browser uploads are memory-only
 ```
 
-Local browser uploads remain in Streamlit session memory unless explicitly written by future code.
-Provider downloads are written under `data/downloads`. The `.gitignore` prevents those data files
-from entering version control.
+Raw browser uploads remain in Streamlit session memory; the app does not copy them to `uploads/`.
+Provider downloads are written under `data/downloads`. After a successful prediction, however,
+submitted features, predictions, and metrics persist inside a report ZIP under
+`data/sessions/history/bundles`, indexed by `data/sessions/history/history.sqlite3`. They remain
+until **Clear history** permanently deletes the SQLite-indexed metadata first and then attempts
+best-effort bundle removal; there is no automatic eviction. A locked ZIP may remain as an orphan,
+so a cleanup warning does not guarantee sensitive-file erasure. Close processes holding warned
+files, then manually remove those ZIPs or the history directory. `TABFM_HISTORY_DIR` can relocate
+that durable history root. The `.gitignore` prevents these local data files from entering version
+control, but it is not a privacy or access-control boundary.
 
 ## 10. Context rows versus test rows
 
@@ -327,13 +335,13 @@ target present  ──→ labeled context
 target missing  ──→ batch test row
 ```
 
-This is convenient for a single workbook or CSV. The Model & Context tab uses all labeled rows for
-preparation. Batch Predictions later selects the blank-target rows.
+This is convenient for a single workbook or CSV. The **Model** page uses all labeled rows for
+preparation. **Predictions → Batch** later selects the blank-target rows.
 
 ### Pattern B — separate test file
 
-Prepare context from the active labeled dataset, then upload another CSV, Parquet, or XLSX in the
-Batch Predictions tab. If the test file contains the target column, nonblank labels are used for
+Prepare context from the active labeled dataset, then upload another CSV, Parquet, or XLSX in
+**Predictions → Batch**. If the test file contains the target column, nonblank labels are used for
 metrics. The target is removed before inference. If it is absent, predictions run without metrics.
 
 > [!WARNING]

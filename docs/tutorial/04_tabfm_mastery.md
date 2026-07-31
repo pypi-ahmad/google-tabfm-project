@@ -8,7 +8,7 @@ what the UI does, how the underlying Python sequence maps to the official TabFM 
 decide whether the resulting metrics are trustworthy.
 
 > [!IMPORTANT]
-> In this repository, **Model & Context** replaces the misleading phrase “training/fine-tuning.”
+> In this repository, the **Model** page replaces the misleading phrase “training/fine-tuning.”
 > TabFM's pretrained weights remain frozen. `fit()` prepares transformations and labeled context;
 > it does not perform gradient descent or update model parameters
 > ([official TabFM quick start][tabfm-readme]).
@@ -39,7 +39,7 @@ flowchart TD
 
 ## 2. Choose the target and task
 
-Open **Model & Context** after selecting a dataset.
+Open **Model** after selecting a dataset on **Data**.
 
 1. Choose **Target column**.
 2. Read the suggested task and rationale.
@@ -222,12 +222,17 @@ $$
 | Metric | Better direction | What it measures | Common trap |
 |---|---|---|---|
 | Accuracy | Higher | Top-label correctness | Can hide minority-class failure |
+| Balanced accuracy | Higher | Mean recall across classes | Still hides which class failed |
+| Macro precision/recall/F1 | Higher | Equal-weight class performance | Unstable with tiny class support |
+| MCC | Higher (1 best) | Overall association across the confusion matrix | Undefined with fewer than two observed classes |
+| Majority baseline accuracy/lift | Higher lift | Gain over always choosing the largest class | Baseline may still be inappropriate for asymmetric costs |
 | Log loss | Lower | Probability calibration and confident mistakes | Sensitive to near-zero probability on true class |
-| Evaluated rows | Context only | Number of nonblank held-out labels | Small counts make metrics unstable |
+| ROC-AUC | Higher | Ranking quality from probabilities | Undefined for incompatible/one-class labels |
+| Evaluated rows | N/A | Number of usable, nonblank held-out labels compared | Small counts make metrics unstable |
 
-Log loss is reported only when probability classes and evaluation labels are compatible. For
-imbalanced or high-stakes classification, export predictions and compute class-specific recall,
-precision, confusion matrices, and calibration diagnostics outside this minimal workbench.
+The report also includes the confusion matrix, per-class precision/recall/F1/support, probability
+diagnostics, and binary ROC curve data when defined. Log loss and ROC-AUC require compatible
+probability classes; unavailable metrics become explicit warnings.
 
 ## 7. Regression mastery
 
@@ -259,18 +264,23 @@ $$
 |---|---|---|
 | MAE | Lower | Typical absolute error in original units |
 | RMSE | Lower | Error with stronger penalty for large misses |
+| Median absolute error | Lower | Typical error resistant to a few large misses |
+| Mean-baseline MAE/RMSE | Lower | Error from predicting the held-out mean |
+| Mean-baseline MAE lift | Higher | Baseline MAE minus model MAE |
 | R² | Higher | Improvement over predicting the held-out mean |
+| Explained variance | Higher | Fraction of target variation explained |
 
 R² can be negative when predictions are worse than the mean baseline. It is omitted for fewer than
-two valid labeled rows because variance comparison is not meaningful. MAE/RMSE depend on target
-scale, so compare them with a naive baseline and domain tolerance.
+two valid labeled rows or a constant target because variance comparison is not meaningful. The
+report also contains actual-versus-predicted rows, residuals, and absolute-error quantiles.
+MAE/RMSE depend on target scale, so compare them with the included baseline and domain tolerance.
 
 ## 8. Batch prediction: blank targets
 
 Use this mode when context and test rows share one table.
 
-1. Prepare context in **Model & Context**.
-2. Open **Batch Predictions**.
+1. Prepare context on **Model**.
+2. Open **Predictions** and select **Batch**.
 3. Select **Blank targets in context dataset**.
 4. Confirm the prediction-row count.
 5. Select **Run batch prediction**.
@@ -338,9 +348,9 @@ A missing column filled with null is not a neutral value; it flows through imput
 can shift predictions. Production systems would normally enforce a stricter schema contract, but
 production use of these weights is prohibited in any case.
 
-## 11. Construct a manual single test case
+## 11. Construct a manual case in Single mode
 
-Open **Single Test Case** after context preparation. The form is derived from context feature
+Open **Predictions** and select **Single** after context preparation. The form is derived from context feature
 dtypes:
 
 | Context dtype/shape | Widget | Default |
@@ -382,15 +392,21 @@ Every result can contain:
 | Prediction column | Final class label or continuous value |
 | Probability columns | Classification probability per `classes_` label |
 | CSV download | Submitted feature rows plus predictions/probabilities |
+| Report bundle | Automatically generated ZIP after a successful prediction action |
 
 Latency is measured per action after context preparation. First-call warm-up, checkpoint loading,
 browser rendering, and provider downloads are outside that number.
+
+The report ZIP contains exactly `report.html`, `report.pdf`, `predictions.csv`, and `metrics.json`.
+Open **EDA & Reports** for deterministic charts capped at 10,000 rows (5,000 for scatter and 20
+numeric columns for correlations), and use **History** to browse 10 saved runs per page and download
+older available bundles.
 
 ## 13. Failure modes and recovery
 
 | Failure | Cause | Recovery |
 |---|---|---|
-| “Prepare a model context first” | No current prepared signature | Return to Model & Context and prepare |
+| “Prepare a model context first” | No current prepared signature | Return to Model and prepare |
 | License warning blocks button | Acknowledgement is false | Review license, set variable, restart app |
 | Classification requires 2–10 classes | One or >10 labeled classes | Correct target/task or use another model |
 | Regression target must be numeric | Text or malformed numbers | Clean target and reload |
@@ -402,9 +418,23 @@ browser rendering, and provider downloads are outside that number.
 | Metrics absent | No usable labels or incompatible probability classes | Include aligned held-out target labels |
 | Old result after input edit | Streamlit state or prepared signature mismatch | Reprepare context and rerun prediction |
 
-Use **Clear session** in the sidebar to remove loaded artifacts, prepared models, and prediction
-state. It does not delete provider files already written under `data/downloads` or the shared model
-cache.
+Use the reset action that matches your intent:
+
+| Action | Removes | Retains |
+|---|---|---|
+| **Clear loaded datasets** | Loaded tables plus all in-memory model/prediction state derived from them | Provider downloads, model cache, permanent history |
+| **Start new task** | Target/task inputs, prepared context, predictions, and current report references | Loaded datasets, provider downloads, model cache, permanent history |
+| **Clear history** | After confirmation, SQLite-indexed metadata first, then best-effort report ZIP cleanup | Loaded datasets, current in-memory task, provider downloads, model cache; locked ZIPs may remain orphaned |
+
+History is permanent local storage under `TABFM_HISTORY_DIR` (default
+`data/sessions/history`), has no automatic eviction, and shows 10 newest-first runs per page.
+Because report bundles contain submitted features, predictions, metrics, and dataset details, do not
+use sensitive data unless this on-disk persistence and the workstation's access controls are
+acceptable. A `failed` run means prediction succeeded but report persistence did not; an
+`unavailable` run has malformed metadata or a missing, corrupt, or unsafe bundle and cannot be
+downloaded. If the UI warns that cleanup was incomplete, close processes holding the warned files
+and manually remove those orphan ZIPs or the history directory; **Clear history** alone does not
+guarantee erasure of locked sensitive files.
 
 ## 14. Memory and performance tuning
 

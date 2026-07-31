@@ -5,13 +5,16 @@ description = "Local-first research workbench for Google Research TabFM"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+  "altair>=5.5,<7",
   "httpx>=0.28.1,<0.29",
   "openpyxl>=3.1.5,<4",
   "pandas>=2.3.1,<3",
   "pyarrow>=20,<21",
   "pydantic-settings>=2.10.1,<3",
+  "reportlab>=4.4,<5",
   "scikit-learn>=1.7,<2",
   "streamlit>=1.47,<2",
+  "vl-convert-python>=1.8,<2",
 ]
 
 [build-system]
@@ -35,11 +38,15 @@ cpu = [
   "torch==2.12.1",
   "tabfm @ https://github.com/google-research/tabfm/archive/cb6ba46b7ebc9a6581a81827e14e9c246202afb9.zip",
 ]
+slides = [
+  "python-pptx>=1.0.2,<2",
+]
 
 [dependency-groups]
 dev = [
   "mypy>=1.17,<2",
   "pandas-stubs>=2.3,<3",
+  "pypdf>=5.8,<6",
   "pytest>=8.4,<9",
   "pytest-cov>=6.2,<7",
   "ruff>=0.12,<1",

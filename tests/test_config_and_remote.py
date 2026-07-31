@@ -1,8 +1,18 @@
+from pathlib import Path
+
 import httpx
 import pytest
 
 from tabfm_workbench.config import Settings
 from tabfm_workbench.remote import RemoteFetchError, fetch_dataset, validate_remote_url
+
+
+def test_history_directory_has_local_default_and_environment_override(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    assert Settings().tabfm_history_dir == Path("data/sessions/history")
+    monkeypatch.setenv("TABFM_HISTORY_DIR", "custom/history")
+    assert Settings().tabfm_history_dir == Path("custom/history")
 
 
 def test_settings_require_license_acknowledgement_for_model_use() -> None:

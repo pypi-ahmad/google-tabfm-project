@@ -68,8 +68,10 @@ def load_table(source: BinaryIO | BytesIO, filename: str) -> pd.DataFrame:
         raise DataFormatError("Dataset contains no rows.")
     if table.columns.empty:
         raise DataFormatError("Dataset contains no columns.")
-    if table.columns.duplicated().any():
-        raise DataFormatError("Dataset contains duplicate column names.")
+    normalized_columns = [str(column) for column in table.columns]
+    if len(set(normalized_columns)) != len(normalized_columns):
+        raise DataFormatError("Dataset contains duplicate column names after normalization.")
+    table.columns = normalized_columns
     return table
 
 

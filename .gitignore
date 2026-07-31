@@ -9,6 +9,7 @@ pytest-cache-files-*/
 .test-temp/
 data/test-temp/
 .ruff_cache/
+.mypy_cache/
 __pycache__/
 *.py[cod]
 TabFM_Masterclass.pptx
@@ -18,3 +19,12 @@ data/downloads/
 data/sessions/
 data/cache/
 !data/**/.gitkeep
+.codegraph/
+.code-review-graph/
+.gh-local/
+.tmp/
+.pptx-qa-tmp/
+.pptx-render/
+graphify-out/
+.remember/
+.claude/settings.local.json
