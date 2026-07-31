@@ -7,6 +7,15 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def assert_model_use_allowed(accepted: bool) -> None:
+    """Block weight loading until the user accepts the TabFM license constraints."""
+    if not accepted:
+        raise ValueError(
+            "TabFM weights use a non-commercial license. Set "
+            "TABFM_ACCEPT_NON_COMMERCIAL_LICENSE=true only after reviewing it."
+        )
+
+
 class Settings(BaseSettings):
     """Configuration loaded from environment variables or an optional env file."""
 
@@ -29,8 +38,4 @@ class Settings(BaseSettings):
 
     def assert_model_use_allowed(self) -> None:
         """Block weight loading until user accepts license constraints."""
-        if not self.tabfm_accept_non_commercial_license:
-            raise ValueError(
-                "TabFM weights use a non-commercial license. Set "
-                "TABFM_ACCEPT_NON_COMMERCIAL_LICENSE=true only after reviewing it."
-            )
+        assert_model_use_allowed(self.tabfm_accept_non_commercial_license)

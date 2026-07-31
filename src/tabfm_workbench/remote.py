@@ -2,11 +2,11 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from ipaddress import ip_address
+from ipaddress import IPv4Address, IPv6Address, ip_address
 from pathlib import PurePosixPath
 from socket import getaddrinfo
 from typing import Any
-from urllib.parse import unquote, urlparse
+from urllib.parse import unquote, urlparse, urlunparse
 
 import httpx
 
@@ -29,8 +29,14 @@ def validate_remote_url(
     *,
     allow_insecure_http: bool = False,
     resolver: Resolver = getaddrinfo,
-) -> None:
-    """Reject unsafe schemes, credentials, and local/private destinations."""
+) -> IPv4Address | IPv6Address:
+    """Reject unsafe schemes, credentials, and local/private destinations.
+
+    Returns the single globally-routable address that was actually validated,
+    so the caller can connect to that exact address instead of re-resolving
+    the hostname a second time (which would reopen a DNS-rebinding window
+    between this check and the real request).
+    """
     parsed = urlparse(url)
     allowed_schemes = {"https", "http"} if allow_insecure_http else {"https"}
     if parsed.scheme not in allowed_schemes:
@@ -58,9 +64,10 @@ def validate_remote_url(
             raise RemoteFetchError("Dataset hostname did not resolve to an IP address.")
         if any(not item.is_global for item in addresses):
             raise RemoteFetchError("Private or local network dataset URLs are not allowed.")
-        return
+        return min(addresses, key=str)
     if not address.is_global:
         raise RemoteFetchError("Private or local network dataset URLs are not allowed.")
+    return address
 
 
 def fetch_dataset(
@@ -69,20 +76,44 @@ def fetch_dataset(
     max_bytes: int = 500 * 1024 * 1024,
     allow_insecure_http: bool = False,
     client: httpx.Client | None = None,
+    resolver: Resolver = getaddrinfo,
 ) -> RemoteDataset:
     """Fetch dataset into memory with scheme and byte-count controls."""
-    validate_remote_url(url, allow_insecure_http=allow_insecure_http)
+    pinned_address = validate_remote_url(
+        url, allow_insecure_http=allow_insecure_http, resolver=resolver
+    )
     parsed = urlparse(url)
     filename = unquote(PurePosixPath(parsed.path).name) or "dataset.csv"
+    hostname = parsed.hostname or ""
+    port_suffix = f":{parsed.port}" if parsed.port is not None else ""
+    pinned_host = (
+        f"[{pinned_address}]" if isinstance(pinned_address, IPv6Address) else str(pinned_address)
+    )
+    pinned_url = urlunparse(parsed._replace(netloc=f"{pinned_host}{port_suffix}"))
     owned_client = client is None
     active_client = client or httpx.Client(
         timeout=httpx.Timeout(30, read=120), follow_redirects=False
     )
     try:
-        with active_client.stream("GET", url) as response:
+        with active_client.stream(
+            "GET",
+            pinned_url,
+            headers={"Host": hostname},
+            extensions={"sni_hostname": hostname},
+        ) as response:
+            if 300 <= response.status_code < 400:
+                raise RemoteFetchError(
+                    f"Remote dataset request was redirected ({response.status_code}); "
+                    "provide the direct file URL instead of one that redirects."
+                )
             response.raise_for_status()
             declared = response.headers.get("content-length")
-            if declared and int(declared) > max_bytes:
+            declared_bytes: int | None
+            try:
+                declared_bytes = int(declared) if declared else None
+            except ValueError:
+                declared_bytes = None
+            if declared_bytes is not None and declared_bytes > max_bytes:
                 raise RemoteFetchError("Remote dataset exceeds configured size limit.")
             content = bytearray()
             for chunk in response.iter_bytes():

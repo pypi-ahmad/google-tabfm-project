@@ -407,7 +407,11 @@ def render_model_context(settings: Settings) -> None:
         return
     if st.button("Load TabFM and prepare context", type="primary", key=_task_key("prepare")):
         with st.spinner("Loading checkpoint and preparing context…"):
-            predictor = load_tabfm_predictor(task, device=settings.tabfm_device)
+            predictor = load_tabfm_predictor(
+                task,
+                device=settings.tabfm_device,
+                accept_non_commercial_license=settings.tabfm_accept_non_commercial_license,
+            )
             predictor.prepare(features, labeled[target])
             st.session_state.prepared_predictor = predictor
             st.session_state.prepared_signature = signature

@@ -6,6 +6,7 @@ from tabfm_workbench.predictor import (
     InferenceError,
     PreparedPredictor,
     align_features,
+    load_tabfm_predictor,
     suggest_task,
 )
 
@@ -16,6 +17,7 @@ class FakeEstimator:
     def __init__(self) -> None:
         self.fit_args: tuple[pd.DataFrame, pd.Series] | None = None
         self.fit_calls = 0
+        self.predict_args: pd.DataFrame | None = None
 
     def fit(self, features: pd.DataFrame, target: pd.Series) -> "FakeEstimator":
         self.fit_args = (features, target)
@@ -23,6 +25,7 @@ class FakeEstimator:
         return self
 
     def predict(self, features: pd.DataFrame) -> np.ndarray:
+        self.predict_args = features
         return np.array(["yes"] * len(features))
 
     def predict_proba(self, features: pd.DataFrame) -> np.ndarray:
@@ -135,3 +138,47 @@ def test_predictor_rejects_stringified_feature_label_collisions() -> None:
             pd.DataFrame([[1, 2], [3, 4]], columns=[1, "1"]),
             pd.Series(["no", "yes"]),
         )
+
+
+def test_align_features_preserves_original_dtype_when_filling_missing_column() -> None:
+    aligned = align_features(
+        pd.DataFrame({"present": [1]}),
+        ["present", "missing_numeric"],
+        {"present": np.dtype("int64"), "missing_numeric": np.dtype("float64")},
+    )
+    assert aligned.frame["missing_numeric"].dtype == np.dtype("float64")
+    assert aligned.frame["missing_numeric"].isna().all()
+
+
+def test_align_features_falls_back_safely_for_dtypes_with_no_null_representation() -> None:
+    """bool/plain-int dtypes can't represent missing; must never fabricate non-null values."""
+    aligned = align_features(
+        pd.DataFrame({"present": [1]}),
+        ["present", "missing_flag"],
+        {"present": np.dtype("int64"), "missing_flag": np.dtype("bool")},
+    )
+    assert aligned.frame["missing_flag"].isna().all()
+
+
+def test_align_features_falls_back_to_object_dtype_without_dtype_info() -> None:
+    aligned = align_features(pd.DataFrame({"different": [2]}), ["x"])
+    assert aligned.frame["x"].dtype == object
+    assert aligned.frame["x"].isna().all()
+
+
+def test_predict_fills_missing_feature_preserving_context_dtype() -> None:
+    estimator = FakeEstimator()
+    session = PreparedPredictor("classification", estimator, device="cpu")
+    session.prepare(
+        pd.DataFrame({"numeric": [1.0, 2.0], "flag": [True, False]}),
+        pd.Series(["no", "yes"]),
+    )
+    session.predict(pd.DataFrame({"flag": [True]}))
+    assert estimator.predict_args is not None
+    assert estimator.predict_args["numeric"].dtype == np.dtype("float64")
+    assert estimator.predict_args["numeric"].isna().all()
+
+
+def test_load_tabfm_predictor_rejects_use_without_license_acceptance() -> None:
+    with pytest.raises(ValueError, match="non-commercial license"):
+        load_tabfm_predictor("classification", accept_non_commercial_license=False)

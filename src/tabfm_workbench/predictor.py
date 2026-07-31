@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 
 from .analytics import EvaluationDiagnostics, evaluate_predictions
+from .config import assert_model_use_allowed
 
 TaskType = Literal["classification", "regression"]
 MetricValue = float | int
@@ -77,7 +78,11 @@ def suggest_task(target: pd.Series) -> TaskSuggestion:
     return TaskSuggestion("regression", "Target is numeric and appears continuous.")
 
 
-def align_features(frame: pd.DataFrame, expected_columns: list[str]) -> SchemaAlignment:
+def align_features(
+    frame: pd.DataFrame,
+    expected_columns: list[str],
+    expected_dtypes: dict[str, Any] | None = None,
+) -> SchemaAlignment:
     """Align prediction data to prepared context schema with explicit diagnostics."""
     if frame.columns.duplicated().any():
         raise InferenceError("Prediction data contains duplicate column names.")
@@ -85,8 +90,24 @@ def align_features(frame: pd.DataFrame, expected_columns: list[str]) -> SchemaAl
     extra = tuple(column for column in frame.columns if column not in expected_columns)
     aligned = frame.drop(columns=list(extra), errors="ignore").copy()
     for column in missing:
-        aligned[column] = pd.NA
+        dtype = expected_dtypes.get(column) if expected_dtypes else None
+        aligned[column] = _null_column(aligned.index, dtype) if dtype is not None else pd.NA
     return SchemaAlignment(aligned.loc[:, expected_columns], missing, extra)
+
+
+def _null_column(index: pd.Index, dtype: Any) -> Any:
+    """Build an all-missing column typed as `dtype`, or fall back to plain `pd.NA`.
+
+    Some numpy dtypes (bool, plain int) have no null representation: constructing
+    a Series from them without explicit values can silently produce non-null
+    "garbage" (e.g. dtype="bool" yields real True/False, not missing) instead of
+    raising. Verify the result is actually all-null before trusting it.
+    """
+    try:
+        candidate = pd.Series(index=index, dtype=dtype)
+    except (TypeError, ValueError):
+        return pd.NA
+    return candidate if candidate.isna().all() else pd.NA
 
 
 def context_fingerprint(features: pd.DataFrame, target: pd.Series, task: TaskType) -> str:
@@ -107,6 +128,7 @@ class PreparedPredictor:
         self.estimator = estimator
         self.device = device
         self.feature_columns: list[str] = []
+        self.feature_dtypes: dict[str, Any] = {}
         self.is_prepared = False
 
     def prepare(self, features: pd.DataFrame, target: pd.Series) -> "PreparedPredictor":
@@ -134,6 +156,7 @@ class PreparedPredictor:
 
         self.estimator.fit(features, prepared_target)
         self.feature_columns = list(features.columns)
+        self.feature_dtypes = dict(zip(features.columns, features.dtypes, strict=True))
         self.is_prepared = True
         return self
 
@@ -147,7 +170,9 @@ class PreparedPredictor:
             raise InferenceError("Prepare the model context before prediction.")
         if features.empty:
             raise InferenceError("At least one prediction row is required.")
-        alignment = align_features(_normalize_feature_columns(features), self.feature_columns)
+        alignment = align_features(
+            _normalize_feature_columns(features), self.feature_columns, self.feature_dtypes
+        )
         warnings = _alignment_warnings(alignment)
         started = perf_counter()
         values = self.estimator.predict(alignment.frame)
@@ -208,8 +233,11 @@ def resolve_device(requested: str = "auto") -> str:
     return "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def load_tabfm_predictor(task: TaskType, *, device: str = "auto") -> PreparedPredictor:
+def load_tabfm_predictor(
+    task: TaskType, *, device: str = "auto", accept_non_commercial_license: bool
+) -> PreparedPredictor:
     """Load official PyTorch checkpoint and configured sklearn wrapper."""
+    assert_model_use_allowed(accept_non_commercial_license)
     try:
         from tabfm import TabFMClassifier, TabFMRegressor, tabfm_v1_0_0_pytorch
     except ImportError as exc:
