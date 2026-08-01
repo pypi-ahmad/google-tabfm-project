@@ -616,7 +616,7 @@ def _html_report(report: ReportInput, chart_png: bytes | None) -> str:
     dataset_name = html.escape(report.dataset_name)
     generated_at = html.escape(_utc(report.created_at).isoformat())
     source = html.escape(report.dataset_source)
-    target = html.escape(report.target or "None")
+    target = html.escape(report.target if report.target is not None else "None")
     device = html.escape(report.device)
     task = html.escape(report.task)
     mode = html.escape(report.prediction_mode)
@@ -688,7 +688,7 @@ def _pdf_report(report: ReportInput, chart_png: bytes | None) -> bytes:
     overview = report.eda.overview
 
     def cell(value: object, *, heading: bool = False) -> Paragraph:
-        style = styles["BodyText"] if not heading else styles["BodyText"].clone("TableHeading")
+        style = styles["BodyText"].clone("TableHeading" if heading else "TableCell")
         if heading:
             style.fontName = "Helvetica-Bold"
         style.fontSize = 7
