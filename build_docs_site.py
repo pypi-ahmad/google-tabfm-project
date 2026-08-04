@@ -222,3 +222,8 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+"""Build the static documentation site."""
+
+# Generated HTML/CSS/JavaScript literals intentionally exceed the source line
+# limit; wrapping them would reduce readability without changing output.
+# ruff: noqa: E501
