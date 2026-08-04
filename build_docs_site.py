@@ -158,7 +158,8 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
 #content code { background: #1e293b; padding: 0.1rem 0.35rem; border-radius: 0.25rem; font-size: 0.9em; }
 #content pre code { background: none; padding: 0; }
 #content pre { padding: 1rem; border-radius: 0.5rem; overflow-x: auto; }
-#content blockquote { border-left: 3px solid #34d399; padding-left: 1rem; color: #cbd5e1; margin: 1rem 0; }
+#content blockquote { border-left: 3px solid #34d399; padding-left: 1rem; color: #cbd5e1;
+  margin: 1rem 0; }
 """
 
 SITE_JS = """
@@ -177,7 +178,8 @@ async function renderMarkdownPage() {
     el.innerHTML = marked.parse(raw, { gfm: true, breaks: false });
   } catch (error) {
     el.innerHTML = `<p class="text-red-400">Could not load ${src}: ${error.message}. ` +
-      `Serve this site over HTTP (e.g. <code>uv run python -m http.server</code>) rather than opening it directly as a file.</p>`;
+      `Serve this site over HTTP (e.g. <code>uv run python -m http.server</code>) rather than
+      opening it directly as a file.</p>`;
     return;
   }
   if (window.hljs) {

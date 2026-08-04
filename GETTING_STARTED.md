@@ -71,6 +71,7 @@ Open `.env` and:
    ```dotenv
    TABFM_ACCEPT_NON_COMMERCIAL_LICENSE=true
    ```
+
 3. Leave `HF_TOKEN`, `KAGGLE_API_TOKEN`, etc. blank unless you plan to pull datasets from Hugging Face or Kaggle.
 
 `.env` is gitignored — it never gets committed, and nothing in it is ever shown in the UI or logged.
