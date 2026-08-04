@@ -67,6 +67,7 @@ Open `.env` and:
 
 1. **Read the [TabFM weight license](https://huggingface.co/google/tabfm-1.0.0-pytorch/blob/main/LICENSE)** — it's non-commercial, research/evaluation use only.
 2. If your intended use is genuinely covered by that license, set:
+
    ```dotenv
    TABFM_ACCEPT_NON_COMMERCIAL_LICENSE=true
    ```
@@ -84,7 +85,7 @@ uv run --env-file .env streamlit run app.py
 uv run --env-file .env streamlit run app.py
 ```
 
-Open **http://127.0.0.1:8501**. That's it — the app binds only to your own
+Open <http://127.0.0.1:8501>. That's it — the app binds only to your own
 machine (`127.0.0.1`), so nothing else on your network can reach it.
 
 ## 5. Use it (the five-minute version)
