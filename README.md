@@ -283,3 +283,5 @@ Third-party TabFM source and pretrained weights retain their own terms. In parti
 are governed by the TabFM Non-Commercial License v1.0. See
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Nothing in this repository relicenses or grants
 additional rights to those weights.
+
+<p align="center">Made with ❤️ by Ahmad Mujtaba</p>
